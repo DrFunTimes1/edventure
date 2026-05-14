@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - EdVenture</title>
+
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/signup.css">
+</head>
+<body>
+
+<div class="authContainer">
+    <div class="authCard">
+        <h1>Create Account</h1>
+
+        <input type="text" id="signupFName" placeholder="First Name">
+        <input type="text" id="signupLName" placeholder="Last Name">
+        <input type="email" id="signupEmail" placeholder="Email">
+        <input type="password" id="signupPass" placeholder="Password">
+
+        <button onclick="signup()">Create Account</button>
+
+        <button class="secondaryButton">
+            Don't have an email ID? Create an edventure.me ID
+        </button>
+
+        <p>
+            Already have an account?
+            <a href="login.html">Login</a>
+        </p>
+    </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/signup.js"></script>
+</body>
+</html>

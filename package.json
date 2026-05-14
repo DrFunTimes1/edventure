@@ -1,10 +1,23 @@
 {
-  "name": "${PROJECT_NAME}",
+  "name": "EdVenture",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@google/genai": "^2.2.0",
+    "@neondatabase/serverless": "^1.1.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "expressjs": "^1.0.1",
+    "fs": "^0.0.1-security",
+    "groq-sdk": "^1.2.0",
+    "sqlite3": "^6.0.1"
+  }
 }

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Friends - EdVenture</title>
+
+    <link rel="stylesheet" href="css/friends.css">
+</head>
+<body>
+
+<header class="friendsHeader">
+
+    <h1>Friends</h1>
+
+    <div class="myFriendCodeBox">
+        Your Code:
+        <span id="myFriendCode">Loading...</span>
+    </div>
+
+</header>
+
+<main class="friendsMain">
+    <section class="addFriendSection">
+        <input
+            type="text"
+            id="friendCodeInput"
+            placeholder="Enter Friend Code"
+        >
+
+        <button onclick="addFriend()">
+            Add Friend
+        </button>
+
+    </section>
+
+    <section
+        class="friendList"
+        id="friendList"
+    >
+
+    </section>
+
+</main>
+
+<nav class="bottomNav">
+    <a href="dashboard.html">Home</a>
+    <a href="learn.html">Learn</a>
+    <a href="friends.html" class="active">Friends</a>
+    <a href="profile.html">Profile</a>
+</nav>
+
+<script src="js/api.js"></script>
+<script src="js/friends.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - EdVenture</title>
+
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<div class="dashboard">
+
+    <header>
+        <h1>EdVenture</h1>
+        <p id="welcomeText"></p>
+    </header>
+
+    <section class="cardGrid">
+
+        <div class="dashboardCard">
+            <h2>Today's Progress</h2>
+            <p>0 lessons completed</p>
+        </div>
+
+        <div class="dashboardCard">
+            <h2>Friend Quests</h2>
+            <p>No active quests</p>
+        </div>
+
+        <div class="dashboardCard">
+            <h2>Achievements</h2>
+            <p>0 badges earned</p>
+        </div>
+
+        <div class="dashboardCard" id="prediagCard">
+            <h2>Pre-Diagnostic Test</h2>
+            <p>Build your learning baseline.</p>
+            <button id="prediagStartButton">Start Pre-Diagnostic Test</button>
+        </div>
+
+    </section>
+
+</div>
+
+<nav class="bottomNav">
+    <button><a href="dashboard.html">Dashboard</a></button>
+    <button><a href="learn.html">Learn</a></button>
+    <button><a href="friends.html">Friends</a></button>
+    <button><a href="profile.html">Profile</a></button>
+</nav>
+
+<script src="js/dashboard.js"></script>
+</body>
+</html>

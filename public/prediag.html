@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pre-Diagnostic - EdVenture</title>
+
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/prediag.css">
+</head>
+<body>
+
+<div class="prediagPage">
+    <header class="prediagHeader">
+        <div>
+            <h1>Pre-Diagnostic Test</h1>
+            <p>Answer each question to calibrate your level.</p>
+        </div>
+    </header>
+
+    <section class="initCard" id="initCard">
+        <h2>Quick Setup</h2>
+        <p>Tell us your starting point before we begin.</p>
+        <form class="initForm" id="initForm">
+            <label class="formRow">
+                <span>Grade</span>
+                <input class="formInput" id="gradeInput" name="grade" type="text" placeholder="e.g. 7" required>
+            </label>
+
+            <label class="formRow">
+                <span>Completed Chapters (comma-separated)</span>
+                <input class="formInput" id="chaptersInput" name="chapters" type="text" placeholder="e.g. 1, 4, 11, 7" required>
+            </label>
+
+            <div class="actionRow">
+                <button id="initSubmit" type="submit">Begin Test</button>
+                <div class="initFeedback" id="initFeedback"></div>
+            </div>
+        </form>
+    </section>
+
+    <section class="questionCard" id="questionSection">
+        <div class="questionText" id="questionText">Loading question...</div>
+        <div class="optionsGrid" id="optionsGrid"></div>
+
+        <div class="actionRow">
+            <button id="submitAnswer" disabled>Submit Answer</button>
+            <div class="feedback" id="feedback"></div>
+        </div>
+    </section>
+
+    <div class="summaryOverlay" id="summaryOverlay">
+        <div class="summaryPanel">
+            <div class="summaryHeader">
+                <h2>Survey Review</h2>
+                <p>See which questions were correct or wrong.</p>
+                <button class="summaryClose" id="summaryClose" type="button">Close</button>
+            </div>
+
+            <div class="summaryList" id="summaryList"></div>
+        </div>
+    </div>
+
+</div>
+
+<script src="js/prediag.js"></script>
+</body>
+</html>
