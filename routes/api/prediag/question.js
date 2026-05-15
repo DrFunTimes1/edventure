@@ -76,8 +76,10 @@ async function genQuestionGemini(prompt) {
             contents: prompt
         });
 
+        const text = typeof response.text === "function" ? response.text() : response.text;
+
         console.log("response generated");
-        return response;
+        return (text || response.candidates?.[0]?.content?.parts?.[0]?.text || "");
 
     } catch (err) {
         console.error("Gemini Failed", err);
@@ -244,17 +246,19 @@ router.get('/question', async (req, res) => {
         `;
 
         req.session.response = ""
-        const sleep = (ms) => new Promise(res => setTimeout(res, ms));
-        try {
-            req.session.response = await genQuestionGemini(prompt);
-        } catch (e) {
-            console.error("failed to use gemini, using groq instead");
-            try{
-                req.session.response =  await genQuestionGroq(prompt);
+        await (async () => {
+            try {
+                req.session.response = await genQuestionGemini(prompt);
+                console.log(req.session.response);
             } catch (e) {
-                res.status(500).json({status: "500 Internal Server Error"});
+                console.error("failed to use gemini, using groq instead. Actual error: ", e);
+                try{
+                    req.session.response =  await genQuestionGroq(prompt);
+                } catch (e) {
+                    res.status(500).json({status: "500 Internal Server Error"});
+                }
             }
-        }    
+        })();   
 
         //If AI tries to be "helpful"
         let cleanText = req.session.response
