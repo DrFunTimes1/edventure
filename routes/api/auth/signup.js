@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router()
 import 'dotenv/config';
+import bcrypt from "bcrypt"
 
 import { neonConfig, neon } from '@neondatabase/serverless';
 const db = neon(process.env.DB_URL);
@@ -9,6 +10,8 @@ router.use(express.json())
 
 router.post('/', async (req, res) => {
     const { email, password, fname, lname } = req.body;
+    const hashedpw = await bcrypt.hash(password, 15);
+    
     try{
         let friendcode = friend_code(6);
         await db`

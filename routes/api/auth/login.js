@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router()
 import 'dotenv/config';
+import bcrypt from "bcrypt";
 
 import { neonConfig, neon } from '@neondatabase/serverless';
 const db = neon(process.env.DB_URL);
@@ -15,7 +16,9 @@ router.post('/', async (req, res) => {
         const result = await db`SELECT * FROM users WHERE email = ${email} AND password = ${password}`;
         const user = result[0];
 
-        if(!user) {
+        const valid = await bcrypt.compare(password, user.password);
+
+        if(!valid) {
             return res.status(401).json({
                 error: "invalid credentials"
             })
