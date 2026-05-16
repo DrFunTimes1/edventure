@@ -3,66 +3,444 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pre-Diagnostic - EdVenture</title>
-
-    <link rel="stylesheet" href="css/global.css">
-    <link rel="stylesheet" href="css/prediag.css">
+    <title>Pre-Diagnostic Test - EdVenture</title>
+    <link rel="stylesheet" href="css/all.min.css">
+    <link rel="stylesheet" href="css/profile-style.css">
+    <style>
+        .prediag-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .question-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-top: 1.5rem;
+        }
+        .question-text {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .option-btn {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+        .option-btn:hover {
+            background: rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
+        }
+        .option-btn.selected {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+        }
+        .action-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .feedback {
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        .feedback.correct {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+        .feedback.wrong {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+        .init-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+        }
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .form-row span {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .form-input {
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .progress-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        .summary-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 2rem;
+        }
+        .summary-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius);
+            max-width: 800px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--card-border);
+        }
+        .summary-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .summary-item {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border-left: 3px solid;
+        }
+        .summary-item.correct {
+            border-left-color: #10b981;
+        }
+        .summary-item.wrong {
+            border-left-color: #ef4444;
+        }
+        .summary-question {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .summary-answer {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .summary-correct {
+            color: #10b981;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+        .score-display {
+            text-align: center;
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+        .score-number {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hidden {
+            display: none;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+        }
+        .btn-outline:hover {
+            border-color: #667eea;
+            color: white;
+        }
+    </style>
 </head>
 <body>
+    <div class="background-overlay"></div>
 
-<div class="prediagPage">
-    <header class="prediagHeader">
-        <div>
-            <h1>Pre-Diagnostic Test</h1>
-            <p>Answer each question to calibrate your level.</p>
-        </div>
-    </header>
-
-    <section class="initCard" id="initCard">
-        <h2>Quick Setup</h2>
-        <p>Tell us your starting point before we begin.</p>
-        <form class="initForm" id="initForm">
-            <label class="formRow">
-                <span>Grade</span>
-                <input class="formInput" id="gradeInput" name="grade" type="text" placeholder="e.g. 7" required>
-            </label>
-
-            <label class="formRow">
-                <span>Completed Chapters (comma-separated)</span>
-                <input class="formInput" id="chaptersInput" name="chapters" type="text" placeholder="e.g. 1, 4, 11, 7" required>
-            </label>
-
-            <div class="actionRow">
-                <button id="initSubmit" type="submit">Begin Test</button>
-                <div class="initFeedback" id="initFeedback"></div>
+    <div class="container prediag-container">
+        <div class="glass-card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <h3><i class="fas fa-stethoscope"></i> Pre-Diagnostic Test</h3>
+                <p class="text-muted" style="color: var(--text-muted);">Answer each question to calibrate your level</p>
             </div>
-        </form>
-    </section>
-
-    <section class="questionCard" id="questionSection">
-        <div class="questionText" id="questionText">Loading question...</div>
-        <div class="optionsGrid" id="optionsGrid"></div>
-
-        <div class="actionRow">
-            <button id="submitAnswer" disabled>Submit Answer</button>
-            <div class="feedback" id="feedback"></div>
         </div>
-    </section>
 
-    <div class="summaryOverlay" id="summaryOverlay">
-        <div class="summaryPanel">
-            <div class="summaryHeader">
-                <h2>Survey Review</h2>
-                <p>See which questions were correct or wrong.</p>
-                <button class="summaryClose" id="summaryClose" type="button">Close</button>
+        <div class="progress-bar" id="progressBarContainer">
+            <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+        </div>
+
+        <div id="initCard" class="init-card">
+            <h4 style="margin-bottom: 1rem;"><i class="fas fa-sliders-h"></i> Quick Setup</h4>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Tell us your starting point before we begin.</p>
+            
+            <div class="form-row">
+                <span><i class="fas fa-chart-line"></i> Grade Level</span>
+                <input class="form-input" id="gradeInput" type="text" placeholder="e.g. 7, 8, 9, 10">
             </div>
 
-            <div class="summaryList" id="summaryList"></div>
+            <div class="form-row">
+                <span><i class="fas fa-book"></i> Completed Chapters</span>
+                <input class="form-input" id="chaptersInput" type="text" placeholder="e.g. 1, 2, 3, 4, 5">
+            </div>
+
+            <div class="action-row">
+                <button id="initSubmit" class="btn btn-primary"><i class="fas fa-play"></i> Begin Test</button>
+                <div id="initFeedback" style="color: var(--text-muted); font-size: 0.9rem;"></div>
+            </div>
+        </div>
+
+        <div id="questionSection" class="hidden">
+            <div class="question-card">
+                <div class="question-text" id="questionText">Loading question...</div>
+                <div class="options-grid" id="optionsGrid"></div>
+                <div class="action-row">
+                    <button id="submitAnswer" class="btn btn-primary" disabled><i class="fas fa-check"></i> Submit Answer</button>
+                    <div id="feedback" class="feedback"></div>
+                </div>
+                <div class="score-display hidden" id="scoreDisplay">
+                    <span class="score-number" id="currentScore">0</span>
+                    <span> / <span id="totalQuestions">0</span> completed</span>
+                </div>
+            </div>
         </div>
     </div>
 
-</div>
+    <div id="summaryOverlay" class="summary-overlay">
+        <div class="summary-panel">
+            <div class="summary-header">
+                <h4><i class="fas fa-clipboard-list"></i> Test Review</h4>
+                <button id="summaryClose" class="btn btn-outline"><i class="fas fa-times"></i> Close</button>
+            </div>
+            <div id="summaryList" class="summary-list"></div>
+        </div>
+    </div>
 
-<script src="js/prediag.js"></script>
+    <script>
+        const questions = [
+            { text: "What is 15 × 4?", options: ["45", "60", "50", "55"], correct: 1 },
+            { text: "Which of these is a prime number?", options: ["12", "15", "17", "21"], correct: 2 },
+            { text: "What is the square root of 144?", options: ["10", "11", "12", "13"], correct: 2 },
+            { text: "If x + 7 = 15, what is x?", options: ["6", "7", "8", "9"], correct: 2 },
+            { text: "What is 3² × 2³?", options: ["36", "48", "72", "96"], correct: 2 },
+            { text: "Which fraction is equivalent to 0.75?", options: ["1/4", "1/2", "2/3", "3/4"], correct: 3 },
+            { text: "What is the perimeter of a square with side 6cm?", options: ["24cm", "36cm", "12cm", "18cm"], correct: 0 },
+            { text: "What is 20% of 80?", options: ["12", "14", "16", "18"], correct: 2 }
+        ];
+
+        let currentQuestion = 0;
+        let userAnswers = [];
+        let grade = "";
+        let chapters = [];
+        let testStarted = false;
+
+        const initCard = document.getElementById('initCard');
+        const questionSection = document.getElementById('questionSection');
+        const questionText = document.getElementById('questionText');
+        const optionsGrid = document.getElementById('optionsGrid');
+        const submitBtn = document.getElementById('submitAnswer');
+        const feedbackDiv = document.getElementById('feedback');
+        const progressFill = document.getElementById('progressFill');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const currentScoreSpan = document.getElementById('currentScore');
+        const totalQuestionsSpan = document.getElementById('totalQuestions');
+        const summaryOverlay = document.getElementById('summaryOverlay');
+        const summaryList = document.getElementById('summaryList');
+
+        totalQuestionsSpan.textContent = questions.length;
+
+        document.getElementById('initSubmit').addEventListener('click', function(e) {
+            e.preventDefault();
+            grade = document.getElementById('gradeInput').value.trim();
+            const chaptersStr = document.getElementById('chaptersInput').value.trim();
+            
+            if (!grade) {
+                document.getElementById('initFeedback').textContent = 'Please enter your grade level';
+                return;
+            }
+            
+            chapters = chaptersStr.split(',').map(c => c.trim()).filter(c => c);
+            document.getElementById('initFeedback').textContent = '';
+            
+            testStarted = true;
+            initCard.classList.add('hidden');
+            questionSection.classList.remove('hidden');
+            scoreDisplay.classList.remove('hidden');
+            loadQuestion();
+        });
+
+        function loadQuestion() {
+            const q = questions[currentQuestion];
+            questionText.textContent = q.text;
+            
+            optionsGrid.innerHTML = '';
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerHTML = `<span style="font-weight: bold; margin-right: 10px;">${String.fromCharCode(65 + idx)}.</span> ${opt}`;
+                btn.onclick = () => selectOption(idx);
+                if (userAnswers[currentQuestion] !== undefined && userAnswers[currentQuestion].selected === idx) {
+                    btn.classList.add('selected');
+                }
+                optionsGrid.appendChild(btn);
+            });
+            
+            submitBtn.disabled = userAnswers[currentQuestion] !== undefined;
+            if (userAnswers[currentQuestion] !== undefined) {
+                const wasCorrect = userAnswers[currentQuestion].selected === q.correct;
+                feedbackDiv.textContent = wasCorrect ? '✓ Correct!' : `✗ Wrong! The correct answer is: ${q.options[q.correct]}`;
+                feedbackDiv.className = `feedback ${wasCorrect ? 'correct' : 'wrong'}`;
+            } else {
+                feedbackDiv.textContent = '';
+                feedbackDiv.className = 'feedback';
+            }
+            
+            const answeredCount = userAnswers.filter(a => a !== undefined).length;
+            progressFill.style.width = `${(answeredCount / questions.length) * 100}%`;
+            currentScoreSpan.textContent = answeredCount;
+        }
+
+        function selectOption(index) {
+            if (userAnswers[currentQuestion] !== undefined) return;
+            
+            const q = questions[currentQuestion];
+            const isCorrect = index === q.correct;
+            
+            userAnswers[currentQuestion] = {
+                selected: index,
+                correct: isCorrect,
+                question: q.text,
+                selectedAnswer: q.options[index],
+                correctAnswer: q.options[q.correct]
+            };
+            
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach((btn, idx) => {
+                if (idx === index) btn.classList.add('selected');
+            });
+            
+            submitBtn.disabled = false;
+        }
+
+        submitBtn.addEventListener('click', function() {
+            if (userAnswers[currentQuestion] === undefined) return;
+            
+            const wasCorrect = userAnswers[currentQuestion].correct;
+            feedbackDiv.textContent = wasCorrect ? '✓ Correct!' : `✗ Wrong! The correct answer is: ${questions[currentQuestion].options[questions[currentQuestion].correct]}`;
+            feedbackDiv.className = `feedback ${wasCorrect ? 'correct' : 'wrong'}`;
+            
+            if (currentQuestion + 1 < questions.length) {
+                currentQuestion++;
+                loadQuestion();
+            } else {
+                completeTest();
+            }
+        });
+
+        function completeTest() {
+            const correctCount = userAnswers.filter(a => a && a.correct).length;
+            const score = Math.round((correctCount / questions.length) * 100);
+            
+            localStorage.setItem('prediag_results', JSON.stringify({
+                grade: grade,
+                chapters: chapters,
+                score: score,
+                correctCount: correctCount,
+                totalQuestions: questions.length,
+                answers: userAnswers,
+                completedAt: new Date().toISOString()
+            }));
+            
+            showSummary();
+        }
+
+        function showSummary() {
+            const correctCount = userAnswers.filter(a => a && a.correct).length;
+            const score = Math.round((correctCount / questions.length) * 100);
+            
+            summaryList.innerHTML = `
+                <div class="score-display" style="margin-bottom: 1rem;">
+                    <span class="score-number">${score}%</span>
+                    <p style="margin-top: 0.5rem;">${correctCount} / ${questions.length} correct</p>
+                </div>
+            `;
+            
+            userAnswers.forEach((answer, idx) => {
+                if (answer) {
+                    const item = document.createElement('div');
+                    item.className = `summary-item ${answer.correct ? 'correct' : 'wrong'}`;
+                    item.innerHTML = `
+                        <div class="summary-question">${idx + 1}. ${answer.question}</div>
+                        <div class="summary-answer"><strong>Your answer:</strong> ${answer.selectedAnswer}</div>
+                        <div class="summary-correct"><strong>Correct answer:</strong> ${answer.correctAnswer}</div>
+                    `;
+                    summaryList.appendChild(item);
+                }
+            });
+            
+            summaryOverlay.style.display = 'flex';
+        }
+
+        document.getElementById('summaryClose').addEventListener('click', function() {
+            summaryOverlay.style.display = 'none';
+            window.location.href = 'dashboard.html';
+        });
+
+        document.getElementById('gradeInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('initSubmit').click();
+            }
+        });
+    </script>
 </body>
 </html>
