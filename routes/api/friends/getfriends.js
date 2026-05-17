@@ -14,23 +14,23 @@ router.get('/', async (req, res) => {
         const friends = await db`
             SELECT friend_id FROM friends WHERE user_id = ${id}
         `;
-        console.log("db1 ping done");
+        console.log("FRIENDS: db1 ping done");
 
         const friendCode = await db`
             SELECT friend_code 
             FROM users 
             WHERE id = ${id} 
         `;
-        console.log("db2 ping done");
+        console.log("FRIENDS: db2 ping done");
 
         for(let i = 0; i < friends.length; i++){
-            console.log("loop iteration no." + i);
+            console.log("FRIENDS: loop iteration no." + i);
             const tmp = await db`
                 SELECT fname, friend_code, id 
                 FROM users 
                 WHERE id = ${friends[i].friend_id}
             `
-            console.log("successfully pinged db");
+            console.log("FRIENDS: successfully pinged db");
             if(tmp.length !== 0){
                 data.push({
                     id: tmp[0].id,
@@ -38,12 +38,12 @@ router.get('/', async (req, res) => {
                     friend_code: tmp[0].friend_code
                 });
             } else{
-                console.error("no user found");
+                console.error("FRINEDS: no user found");
             }
-            console.log("successfully pushed to data");
+            console.log("FRIENDS: successfully pushed to data");
         }
         
-        console.log("success shall be ours");
+        console.log("FRIENDS: success shall be ours");
 
         res.status(200).json({
             friend_code: friendCode[0].friend_code,

@@ -12,7 +12,7 @@ import getfriends from './routes/api/friends/getfriends.js';
 import addfriends from './routes/api/friends/add.js';
 import question from './routes/api/prediag/question.js';
 import backendworks from './routes/api/backendworks.js';
-
+ 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
