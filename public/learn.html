@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn - EdVenture</title>
+    <link rel="stylesheet" href="css/all.min.css">
+    <link rel="stylesheet" href="css/learn.css">
+</head>
+<body>
+    <div class="bg-orbs"></div>
+
+    <div class="page">
+        <header class="topbar">
+            <div class="brand">
+                <span class="brand-mark"><i class="fas fa-graduation-cap"></i></span>
+                <span>EdVenture</span>
+            </div>
+            <nav class="topnav">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="learn.html" class="active">Learn</a>
+                <a href="friends.html">Friends</a>
+                <a href="profile.html">Profile</a>
+            </nav>
+        </header>
+
+        <main class="main">
+            <section class="card init-panel" id="initPanel">
+                <div class="panel-header">
+                    <div>
+                        <h1>Start Your Session</h1>
+                        <p>Tell us what you want to learn and your completed chapters.</p>
+                    </div>
+                    <span class="pill">AI Live</span>
+                </div>
+                <form id="initForm" class="form-grid">
+                    <label class="input-group">
+                        <span>Subject</span>
+                        <select id="languageInput" class="input">
+                            <option value="" selected>Select a subject</option>
+                            <option value="maths">Maths</option>
+                        </select>
+                    </label>
+                    <label class="input-group">
+                        <span>Completed Chapters</span>
+                        <input type="text" id="chaptersInput" class="input" placeholder="e.g. 1, 2, 3">
+                    </label>
+                    <button type="submit" class="btn btn-primary" id="startSessionButton">
+                        <i class="fas fa-rocket"></i>
+                        Begin Session
+                    </button>
+                    <div class="helper-text" id="initStatus"></div>
+                </form>
+            </section>
+
+            <section class="card lesson-panel hidden" id="lessonPanel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Adaptive Question</h2>
+                        <p id="questionMeta">Ready when you are.</p>
+                    </div>
+                    <div class="progress-pill" id="progressPill">Leveling</div>
+                </div>
+
+                <div class="question-card" id="questionCard">
+                    <div class="question-text" id="questionText">Loading question...</div>
+                    <div class="options-grid" id="optionsGrid"></div>
+                </div>
+
+                <div class="answer-footer">
+                    <div class="answer-status" id="answerStatus"></div>
+                    <button class="btn btn-secondary" id="checkAnswerButton" type="button">Check Answer</button>
+                </div>
+
+                <div class="result-panel hidden" id="resultPanel">
+                    <div class="result-row">
+                        <div>
+                            <span class="result-label">Your Answer</span>
+                            <div class="result-value" id="userAnswer"></div>
+                        </div>
+                        <div>
+                            <span class="result-label">Correct Answer</span>
+                            <div class="result-value" id="correctAnswer"></div>
+                        </div>
+                    </div>
+                    <div class="explanation" id="explanation"></div>
+                    <div class="action-row">
+                        <button class="btn btn-ghost" id="openDoubtButton" type="button">I still have a doubt</button>
+                        <button class="btn btn-primary" id="nextQuestionButton" type="button">Next Question</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div class="doubt-overlay" id="doubtOverlay"></div>
+        <aside class="doubt-panel" id="doubtPanel">
+            <div class="doubt-header">
+                <button class="close-btn" id="closeDoubtButton" type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div>
+                    <h3>Ask Your Doubt</h3>
+                    <p>Get instant AI help without leaving the lesson.</p>
+                </div>
+            </div>
+            <div class="doubt-messages" id="doubtMessages"></div>
+            <form class="doubt-input" id="doubtForm">
+                <input type="text" id="doubtInput" class="input" placeholder="Type your doubt...">
+                <button class="btn btn-primary" type="submit">Enter Doubt</button>
+            </form>
+        </aside>
+    </div>
+
+    <script src="js/learn.js"></script>
+</body>
+</html>
