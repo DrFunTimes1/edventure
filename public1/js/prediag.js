@@ -1,7 +1,6 @@
 let selectedAnswer = null;
 let isLoading = false;
 let questionCount = 0;
-// const maxQuestions = 1; DEBUGGING ONLY
 const maxQuestions = 10;
 let currentQuestionNumber = 0;
 let currentQuestionData = null;
@@ -219,7 +218,7 @@ async function fetchQuestion() {
 
         data.question.options.forEach((optionText) => {
             const button = document.createElement("button");
-            button.className = "option-btn";
+            button.className = "optionButton";
             button.textContent = optionText;
             button.addEventListener("click", () => selectOption(button, optionText));
             optionsGrid.appendChild(button);
@@ -239,7 +238,7 @@ function selectOption(button, optionText) {
     selectedAnswer = optionText;
     submitAnswer.disabled = false;
 
-    document.querySelectorAll(".option-btn").forEach((btn) => {
+    document.querySelectorAll(".optionButton").forEach((btn) => {
         btn.classList.remove("selected");
     });
 

@@ -176,68 +176,6 @@
             font-size: 0.85rem;
             margin-top: 0.25rem;
         }
-        .summaryQuestionCard {
-            padding: 1.25rem;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            border: 1px solid var(--card-border);
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .summaryQuestionTitle {
-            font-weight: 600;
-            line-height: 1.4;
-        }
-        .summaryOptions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 0.75rem;
-        }
-        .summaryOption {
-            padding: 0.75rem 0.9rem;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--card-border);
-        }
-        .summaryOption.correct {
-            border-color: rgba(16, 185, 129, 0.6);
-            background: rgba(16, 185, 129, 0.08);
-        }
-        .summaryOption.wrong {
-            border-color: rgba(239, 68, 68, 0.6);
-            background: rgba(239, 68, 68, 0.08);
-        }
-        .summaryOption.selected {
-            box-shadow: 0 0 0 1px rgba(102, 126, 234, 0.4);
-        }
-        .summaryExplainRow {
-            display: flex;
-            justify-content: flex-start;
-        }
-        .summaryExplainButton {
-            padding: 0.6rem 1rem;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid var(--card-border);
-            color: var(--text-primary);
-            cursor: pointer;
-        }
-        .summaryExplainButton:hover {
-            border-color: #667eea;
-        }
-        .summaryExplainContent {
-            display: none;
-            padding: 0.75rem 0.9rem;
-            border-radius: 10px;
-            border: 1px solid var(--card-border);
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-        .summaryExplainContent.open {
-            display: block;
-        }
         .score-display {
             text-align: center;
             padding: 1rem;
@@ -285,23 +223,21 @@
         <div id="initCard" class="init-card">
             <h4 style="margin-bottom: 1rem;"><i class="fas fa-sliders-h"></i> Quick Setup</h4>
             <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Tell us your starting point before we begin.</p>
+            
+            <div class="form-row">
+                <span><i class="fas fa-chart-line"></i> Grade Level</span>
+                <input class="form-input" id="gradeInput" type="text" placeholder="e.g. 7, 8, 9, 10">
+            </div>
 
-            <form id="initForm">
-                <div class="form-row">
-                    <span><i class="fas fa-chart-line"></i> Grade Level</span>
-                    <input class="form-input" id="gradeInput" type="text" placeholder="e.g. 7, 8, 9, 10">
-                </div>
+            <div class="form-row">
+                <span><i class="fas fa-book"></i> Completed Chapters</span>
+                <input class="form-input" id="chaptersInput" type="text" placeholder="e.g. 1, 2, 3, 4, 5">
+            </div>
 
-                <div class="form-row">
-                    <span><i class="fas fa-book"></i> Completed Chapters</span>
-                    <input class="form-input" id="chaptersInput" type="text" placeholder="e.g. 1, 2, 3, 4, 5">
-                </div>
-
-                <div class="action-row">
-                    <button id="initSubmit" class="btn btn-primary" type="submit"><i class="fas fa-play"></i> Begin Test</button>
-                    <div id="initFeedback" style="color: var(--text-muted); font-size: 0.9rem;"></div>
-                </div>
-            </form>
+            <div class="action-row">
+                <button id="initSubmit" class="btn btn-primary"><i class="fas fa-play"></i> Begin Test</button>
+                <div id="initFeedback" style="color: var(--text-muted); font-size: 0.9rem;"></div>
+            </div>
         </div>
 
         <div id="questionSection" class="hidden">
@@ -329,7 +265,6 @@
             <div id="summaryList" class="summary-list"></div>
         </div>
     </div>
-
     <script src="js/prediag.js"></script>
 </body>
 </html>

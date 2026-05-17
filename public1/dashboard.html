@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - EdVenture</title>
+    <link rel="stylesheet" href="css/all.min.css">
+    <link rel="stylesheet" href="css/profile-style.css">
+</head>
+<body>
+    <div class="background-overlay"></div>
+
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="logo">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>EdVenture</span>
+                    </h1>
+                    <nav class="nav">
+                        <a href="dashboard.html" class="nav-link active">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="learn.html" class="nav-link">
+                            <i class="fas fa-book-open"></i>
+                            <span>Learn</span>
+                        </a>
+                        <a href="friends.html" class="nav-link">
+                            <i class="fas fa-user-friends"></i>
+                            <span>Friends</span>
+                        </a>
+                        <a href="profile.html" class="nav-link">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
+                        </a>
+                    </nav>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <span class="welcome-text" id="welcomeText">Welcome, Explorer!</span>
+                        <img src="images/default-avatar.png" alt="Avatar" class="header-avatar">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="stats-container">
+                <div class="stat-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h3 id="lessonsCompleted">0</h3>
+                    <p>Lessons Completed</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-quest"></i>
+                    <h3 id="activeQuests">0</h3>
+                    <p>Active Quests</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-trophy"></i>
+                    <h3 id="badgesEarned">0</h3>
+                    <p>Badges Earned</p>
+                </div>
+            </div>
+
+            <div class="profile-content">
+                <div class="content-left">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-rocket"></i> Quick Actions</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="friends-grid">
+                                <div class="friend-item">
+                                    <div class="friend-link" id="prediagCard">
+                                        <i class="fas fa-stethoscope" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                                        <span class="friend-name">Pre-Diagnostic Test</span>
+                                        <span class="friend-name" style="font-size: 0.8rem; color: var(--text-muted);">Build your baseline</span>
+                                        <button id="prediagStartButton" class="btn btn-primary" style="margin-top: 15px; width: 100%;">
+                                            <i class="fas fa-play"></i> Start Test
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-right">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-simple"></i> Your Progress</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="profile-info" style="margin-bottom: 15px;">
+                                <strong>Completion Rate:</strong> 0%
+                            </div>
+                            <div class="profile-info" style="margin-bottom: 15px;">
+                                <strong>Current Streak:</strong> 0 days
+                            </div>
+                            <div class="balance">
+                                <i class="fas fa-star"></i> XP: 0
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-calendar-week"></i> Upcoming</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="follower-item">
+                                <div class="follower-link">
+                                    <i class="fas fa-flask"></i>
+                                    <span class="follower-name">Complete diagnostic test</span>
+                                </div>
+                            </div>
+                            <div class="follower-item">
+                                <div class="follower-link">
+                                    <i class="fas fa-users"></i>
+                                    <span class="follower-name">Join a study group</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.getElementById('prediagStartButton').addEventListener('click', function() {
+            window.location.href = 'prediag.html';
+        });
+
+        const userName = localStorage.getItem('userName');
+        if (userName) {
+            document.getElementById('welcomeText').textContent = 'Welcome, ' + userName + '!';
+        }
+    </script>
+</body>
+</html>

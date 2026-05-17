@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - EdVenture</title>
+    <link rel="stylesheet" href="css/all.min.css">
+    <link rel="stylesheet" href="css/profile-style.css">
+    <style>
+        .auth-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .auth-card-custom {
+            max-width: 450px;
+            width: 100%;
+        }
+        .form-group-custom {
+            margin-bottom: 1.5rem;
+        }
+        .form-group-custom label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .form-input-custom {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+            border-radius: var(--border-radius-sm, 12px);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        .form-input-custom:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-muted);
+        }
+        .auth-footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+        .error-message {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+        .error-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-overlay"></div>
+
+    <div class="auth-page">
+        <div class="glass-card auth-card-custom">
+            <div class="card-header" style="text-align: center; justify-content: center;">
+                <h3><i class="fas fa-lock"></i> Login</h3>
+            </div>
+            <div class="card-body">
+                <div class="error-message" id="loginError"></div>
+                
+                <div class="form-group-custom">
+                    <label><i class="fas fa-envelope"></i> Email Address</label>
+                    <input type="email" id="loginEmail" class="form-input-custom" placeholder="Enter your email">
+                </div>
+
+                <div class="form-group-custom">
+                    <label><i class="fas fa-key"></i> Password</label>
+                    <input type="password" id="loginPass" class="form-input-custom" placeholder="Enter your password">
+                </div>
+
+                <button onclick="login()" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+
+                <div class="auth-footer">
+                    <p>Don't have an account? <a href="signup.html">Sign up</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function login() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPass').value;
+            const errorDiv = document.getElementById('loginError');
+
+            errorDiv.classList.remove('show');
+
+            if (!email || !password) {
+                errorDiv.textContent = 'Please fill in all fields';
+                errorDiv.classList.add('show');
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('edventure_users') || '[]');
+            const user = users.find(u => u.email === email && u.password === password);
+
+            if (user) {
+                localStorage.setItem('edventure_current_user', JSON.stringify({
+                    id: user.id,
+                    name: user.name,
+                    email: user.email
+                }));
+                window.location.href = 'dashboard.html';
+            } else {
+                errorDiv.textContent = 'Invalid email or password';
+                errorDiv.classList.add('show');
+            }
+        }
+
+        document.getElementById('loginPass').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') login();
+        });
+    </script>
+</body>
+</html>

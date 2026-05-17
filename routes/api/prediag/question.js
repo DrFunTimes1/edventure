@@ -25,7 +25,6 @@ router.use(session({
 }));
 
 router.use(express.json());
-router.use(express.static(path.join(__dirname, 'public')));
 router.use(cors());
 
 //This converts files into strings so the AI can read them.
@@ -227,7 +226,13 @@ router.get('/question', async (req, res) => {
             Make questions:
             - conceptually different from last 15
             - varied format (definition / application / reasoning / comparison)
-            - CBSE aligned
+            - CBSE aligned\
+
+            ==========================
+            JSON RULES (VERY STRICT)
+            ==========================
+            - Refrain from putting only the option index (a/b/c/d) in the correctAnswer json field. You should enter the exact contents of what you gave in the options fiels (the correct answer only, not the other options). This is STRICT.
+            - You are required to enter an explanation for the question.
 
             ========================
             SYLLABUS
@@ -240,7 +245,7 @@ router.get('/question', async (req, res) => {
             {
             "question": "...",
             "options": ["A", "B", "C", "D"],
-            "correctAnswer": "...",
+            "correctAnswer": "<Content of the option>",
             "explanation": "..."
             }
         `;
