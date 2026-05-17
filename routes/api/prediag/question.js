@@ -149,14 +149,17 @@ router.get('/question', async (req, res) => {
             console.warn("no chapter text", chapter);
         }
 
+        // increase the question number
         req.session.qno++;
 
+        // set the tier
         req.session.tier = 
             req.session.level <= -6 ? "d" :
             req.session.level <= -1 ? "c" :
             req.session.level <= 5 ? "b" :
             "a";
 
+        // prompt
         const prompt = `
             You are EdVenture AI, an adaptive school tutor.
 
@@ -249,8 +252,9 @@ router.get('/question', async (req, res) => {
             "explanation": "..."
             }
         `;
-
         req.session.response = ""
+
+        //try-catch loop for 429s 
         await (async () => {
             try {
                 req.session.response = await genQuestionGemini(prompt);
@@ -274,6 +278,7 @@ router.get('/question', async (req, res) => {
             .trim(); //remove trailing tabs/spaces etc.
 
         let data;
+        //try to parse json
         try {
             data = JSON.parse(cleanText);
         } catch (err) {
@@ -285,11 +290,12 @@ router.get('/question', async (req, res) => {
         req.session.correctAnswer = data.correctAnswer;
 
         req.session.explanations ??= {}; //same thing for ??= here
-        req.session.explanations[req.session.qno] = data.explanation || "";
+        req.session.explanations[req.session.qno] = data.explanation || ""; //make an object for explanations
 
+        //push current question in usedQuestions
         req.session.usedQuestions.push(data.question);
 
-        // prevent memory explosion (Kaboom?)
+        // prevent memory explosion (Kaboom?) 
         if (req.session.usedQuestions.length > 30) {
             req.session.usedQuestions.shift();
         }
@@ -304,6 +310,7 @@ router.get('/question', async (req, res) => {
         });
 
     } catch (err) {
+        // most likely json parse error
         console.error("endpint failed lol oops ", err);
 
         res.status(500).json({
@@ -315,6 +322,7 @@ router.get('/question', async (req, res) => {
 
 //answer checker
 router.post('/question', (req, res) => {
+    // try-catch loop that does the checking
     try {
         const studentAnswer = req.body.answer;
 
@@ -335,18 +343,19 @@ router.post('/question', (req, res) => {
 router.get('/explain', (req, res) => {
     try {
         const qno = Number(req.query.qno);
-        const explanations = req.session.explanations || {};
+        const explanations = req.session.explanations || {}; // get the explanation from the object for the given qno
 
         if (qno === null || qno === undefined || !explanations[qno]) {
             return res.status(404).json({ explanation: "" });
-        }
+        } //if qno or explanations[qno] is nullish, return 404
 
         res.json({ explanation: explanations[qno] });
+        //send explanation
 
     } catch (err) {
-        console.error("EXPLAIN FAILED:", err);
-        res.status(500).json({ error: "explain failed" });
+        console.error("EXPLAIN FAILED:", err); //This has never happened before, but just to be safe
+        res.status(500).json({ error: "500 Internal Server Error" });
     }
 });
 
-export default router;
+export default router; //export the module
