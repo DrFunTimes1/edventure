@@ -36,6 +36,7 @@ async function loadChapter(filePath) {
 router.post('/initDetails', async (req, res) => {
     try {
         req.session.grade = req.body.grade;
+        localStorage.setItem("grade", req.session.grade); //localstorage for learn.js
         req.session.chsDone = req.body.completedChapters || [];
 
         // reset stuff
