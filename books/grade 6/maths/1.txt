@@ -13,7 +13,7 @@ Cubes: 1,8,27… (n×n×n)
 Virahanka: 1,2,3,5,8… (sum of last two)
 Powers: 2^n, 3^n sequences.
 
-DOT VISUALS (meaning only)
+DOT VISUALS
 Square dots: arranged in equal rows and columns forming a perfect square grid (n×n dots).
 Triangle dots: arranged in rows increasing by 1 each step (1,2,3,4…) forming a triangular stack.
 

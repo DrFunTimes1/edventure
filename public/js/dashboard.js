@@ -1,25 +1,32 @@
-const user = JSON.parse(localStorage.getItem("user"));
+(async () => {
+    await checkLoggedIn();
+    const user = await apiRequest("/api/auth/getUser")
+    console.log(user);
 
-if (!user) {
-    window.location.href = "login.html";
-}
+    if (!user) {
+        window.location.href = "login.html";
+    }
 
-const welcomeText = document.getElementById("welcomeText");
-const prediagStartButton = document.getElementById("prediagStartButton");
-const prediagCard = document.getElementById("prediagCard");
+    const welcomeText = document.getElementById("welcomeText");
+    const prediagStartButton = document.getElementById("prediagStartButton");
+    console.log("button:", prediagStartButton);
 
-if (welcomeText) {
-    welcomeText.textContent = `Welcome back, ${user.name}`;
-}
+    const prediagCard = document.getElementById("prediagCard");
 
-const surveyCompleted = localStorage.getItem("surveyCompleted") === "true";
+    if (welcomeText) {
+        welcomeText.textContent = `Welcome back, ${user.user.fname}!`;
+    }
 
-if (surveyCompleted && prediagCard) {
-    prediagCard.style.display = "none";
-}
+    const surveyCompleted = localStorage.getItem("surveyCompleted") === "true";
 
-if (prediagStartButton) {
-    prediagStartButton.addEventListener("click", () => {
-        window.location.href = "prediag.html";
-    });
-}
+    // if (surveyCompleted && prediagCard) {
+    //     prediagCard.style.display = "none";
+    // }
+
+    if (prediagStartButton) {
+        prediagStartButton.addEventListener("click", () => {
+            window.location.replace("prediag.html");
+        });
+    }
+})();
+

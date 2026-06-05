@@ -1,6 +1,7 @@
 async function apiRequest(endpoint, method = "GET", body = null) {
     const options = {
         method,
+        credentials: "include",
         headers: {
             "Content-Type": "application/json"
         }
@@ -15,7 +16,9 @@ async function apiRequest(endpoint, method = "GET", body = null) {
     const data = await response.json();
 
     if (!response.ok) {
-        throw new Error(data.error || "Request failed");
+        const err = new Error(data.error || "Request failed");
+        err.status = response.status;
+        throw err;
     }
 
     return data;

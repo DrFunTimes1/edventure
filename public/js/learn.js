@@ -167,6 +167,7 @@ function renderOrdering(options) {
 }
 
 async function loadQuestion() {
+    await checkLoggedIn();
     resetUI();
     isLoading = true;
     questionText.textContent = "Loading...";
@@ -174,10 +175,10 @@ async function loadQuestion() {
     nextQuestionButton.disabled = true;
     checkAnswerButton.disabled = true;
 
-    const res = await fetch("/api/learn/question");
-    const data = await res.json();
+    const res = await apiRequest("/api/learn/question");
+    
 
-    currentQuestion = data;
+    currentQuestion = res;
     currentType = currentQuestion.type;
 
     questionText.textContent = currentQuestion.question;
@@ -264,19 +265,18 @@ checkAnswerButton.onclick = async () => {
             checkAnswerButton.disabled = false;
             return;
         }
-        const res = await fetch("/api/learn/check", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+        const res = await apiRequest("/api/learn/check", 
+            "POST",
+            {
                 question: currentQuestion.question,
                 answer,
                 type: currentQuestion.type
-            })
-        });
-        const data = await res.json();
-        isCorrect = !!data.correct;
-        if (data.explanation) {
-            explanationEl.textContent = data.explanation;
+            }
+        );
+        
+        isCorrect = !!res.correct;
+        if (res.explanation) {
+            explanationEl.textContent = res.explanation;
         }
         userAnswerText = answer || "";
         correctAnswerText = currentQuestion.sampleAnswer || currentQuestion.correctAnswer || "";
@@ -315,15 +315,14 @@ initForm.onsubmit = async (e) => {
         return;
     }
 
-    await fetch("/api/learn/init", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({
+    await apiRequest("/api/learn/init",
+        "POST", 
+        {
             language,
             grade,
             completedChapters: chapters
-        })
-    });
+        }
+    );
 
     initPanel.classList.add("hidden");
     lessonPanel.classList.remove("hidden");
@@ -350,16 +349,15 @@ doubtForm.onsubmit = async (e) => {
 
     doubtMessages.innerHTML += `<div>You: ${doubt}</div>`;
 
-    const res = await fetch("/api/learn/explanation", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({
+    const res = await apiRequest("/api/learn/explanation", 
+        "POST", 
+        {
             question: currentQuestion.question,
             doubt
-        })
-    });
+        }
+    );
 
-    const data = await res.json();
+    
 
-    doubtMessages.innerHTML += `<div>AI: ${data.answer}</div>`;
+    doubtMessages.innerHTML += `<div>AI: ${res.answer}</div>`;
 };

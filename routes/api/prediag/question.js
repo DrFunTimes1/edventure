@@ -17,12 +17,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const router = express.Router();
-router.use(session({
-    secret: "edventure-secret-key",
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false }
-}));
 
 router.use(express.json());
 router.use(cors());
@@ -36,7 +30,6 @@ async function loadChapter(filePath) {
 router.post('/initDetails', async (req, res) => {
     try {
         req.session.grade = req.body.grade;
-        localStorage.setItem("grade", req.session.grade); //localstorage for learn.js
         req.session.chsDone = req.body.completedChapters || [];
 
         // reset stuff

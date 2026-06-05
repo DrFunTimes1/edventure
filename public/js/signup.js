@@ -3,13 +3,13 @@ async function signup() {
         const fname = document.getElementById("signupFName").value.trim();
         const lname = document.getElementById("signupLName").value.trim();
         const email = document.getElementById("signupEmail").value.trim();
-        const password = document.getElementById("signupPass").value.trim();
+        const unhashedpw = document.getElementById("signupPass").value.trim();
 
         await apiRequest("/api/auth/signup", "POST", {
             fname,
             lname,
             email,
-            password
+            unhashedpw
         });
 
         alert("Account created successfully.");

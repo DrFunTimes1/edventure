@@ -156,9 +156,7 @@ async function toggleExplanation(entry, contentEl, buttonEl) {
     contentEl.textContent = "Loading explanation...";
 
     try {
-        const response = await fetch(`/api/prediag/explain?qno=${entry.qno}`, {
-            credentials: "same-origin"
-        });
+        const response = await apiRequest(`/api/prediag/explain?qno=${entry.qno}`);
 
         if (handleSessionExpired(response, contentEl)) {
             return;
@@ -182,6 +180,7 @@ async function toggleExplanation(entry, contentEl, buttonEl) {
 
 
 async function fetchQuestion() {
+    await checkLoggedIn();
     if (questionCount >= maxQuestions) {
         endSurvey();
         return;
@@ -194,9 +193,7 @@ async function fetchQuestion() {
     selectedAnswer = null;
 
     try {
-        const response = await fetch("/api/prediag/question", {
-            credentials: "same-origin"
-        });
+        const response = await apiRequest("/api/prediag/question");
 
         if (handleSessionExpired(response, feedback)) {
             return;
@@ -255,16 +252,10 @@ async function submitCurrentAnswer() {
     clearFeedback();
 
     try {
-        const response = await fetch("/api/prediag/question", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
+        const response = await apiRequest("/api/prediag/question", "POST", {
                 answer: selectedAnswer
-            })
-        });
+            }
+        );
 
         if (handleSessionExpired(response, feedback)) {
             return;
@@ -335,16 +326,9 @@ async function submitInitDetails(event) {
     setInitFeedback("Submitting details...");
 
     try {
-        const response = await fetch("/api/prediag/initDetails", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
+        const response = await apiRequest("/api/prediag/initDetails", "POST", {
                 grade: gradeValue,
                 completedChapters: chapterList
-            })
         });
 
         if (handleSessionExpired(response, initFeedback)) {
@@ -383,6 +367,7 @@ if (initForm) {
 }
 
 if (summaryClose) {
+    localStorage.setItem("surveyCompleted", true);
     summaryClose.addEventListener("click", closeSummaryOverlay);
 }
 

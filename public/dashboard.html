@@ -132,15 +132,8 @@
         </div>
     </main>
 
-    <script>
-        document.getElementById('prediagStartButton').addEventListener('click', function() {
-            window.location.href = 'prediag.html';
-        });
-
-        const userName = localStorage.getItem('userName');
-        if (userName) {
-            document.getElementById('welcomeText').textContent = 'Welcome, ' + userName + '!';
-        }
-    </script>
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/checkloggedin.js"></script>
 </body>
 </html>

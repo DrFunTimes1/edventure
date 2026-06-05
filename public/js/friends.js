@@ -4,30 +4,31 @@ window.addEventListener(
 );
 
 async function loadFriends() {
-
+    await checkLoggedIn();
     try {
+        const data = await apiRequest(`/api/auth/getuser`);
 
-        const user = JSON.parse(
-            localStorage.getItem("user")
-        );
+        const user = data.user;
 
         if (!user) {
             window.location.replace("login.html");
             return;
         }
 
-        const data = await apiRequest(`/api/friends/getfriends?id=${user.userId}`);
-
         document.getElementById(
             "myFriendCode"
-        ).textContent = data.friend_code;
+        ).textContent = user.friend_code;
 
         const friendList =
             document.getElementById("friendList");
 
         friendList.innerHTML = "";
 
-        if (data.friends.length === 0) {
+        const userFriends = await apiRequest(
+            `/api/friends/getfriends?id=${user.id}`
+        );
+
+        if (!userFriends.friends || userFriends.friends.length === 0) {
 
             friendList.innerHTML = `
                 <p class="noFriendsText">
@@ -37,9 +38,8 @@ async function loadFriends() {
             return;
         }
 
-        data.friends.forEach(friend => {
-
-            console.log("started panel creation (loop)")
+        userFriends.friends.forEach(friend => {
+            console.log("FRIENDS FE: started panel creation (loop)");
 
             friendList.innerHTML += `
                 <div class="friendCard">
@@ -65,13 +65,10 @@ async function loadFriends() {
 
                 </div>
             `;
-
         });
 
     } catch (err) {
-
         console.error(err);
-
         alert("Failed to load friends");
 
     }
@@ -79,6 +76,7 @@ async function loadFriends() {
 }
 
 async function addFriend() {
+    await checkLoggedIn();
     try {
         const friendCode =
             document
@@ -105,7 +103,6 @@ async function addFriend() {
             }
         );
 
-        // clear input
         document.getElementById(
             "friendCodeInput"
         ).value = "";
@@ -119,13 +116,8 @@ async function addFriend() {
         alert(err.message);
 
     }
-
 }
 
 function viewFriend(friendId) {
-
-    console.log(
-        "Viewing friend:",
-        friendId
-    );
+    console.log("Viewing friend:", friendId);
 }
