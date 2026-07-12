@@ -34,11 +34,66 @@ let matchingSelections = {};
 let orderingSelection = [];
 let isLoading = false;
 
+function syncCheckButtonState() {
+    if (currentType === "mcq" || currentType === "truefalse") {
+        checkAnswerButton.disabled = !selectedAnswer;
+        return;
+    }
+
+    if (currentType === "matching") {
+        const column1 = currentQuestion?.column1 || [];
+        checkAnswerButton.disabled = !column1.length || !column1.every((value) => matchingSelections[value]);
+        return;
+    }
+
+    if (currentType === "ordering") {
+        const options = currentQuestion?.options || [];
+        checkAnswerButton.disabled = orderingSelection.length !== options.length;
+        return;
+    }
+
+    if (currentType === "shortqa" || currentType === "longqa" || currentType === "fillblanks") {
+        const field = document.getElementById("textAnswer");
+        checkAnswerButton.disabled = !field || field.value.trim().length === 0;
+        return;
+    }
+
+    checkAnswerButton.disabled = true;
+}
+
 function parseChapters(input) {
     return input
         .split(",")
         .map((item) => Number(item.trim()))
         .filter((value) => !Number.isNaN(value));
+}
+
+function parseMaybeJson(value) {
+    if (typeof value !== "string") {
+        return value;
+    }
+
+    try {
+        return JSON.parse(value);
+    } catch {
+        return value;
+    }
+}
+
+function formatObjectiveAnswer(value, type) {
+    const parsed = parseMaybeJson(value);
+
+    if (type === "matching") {
+        const pairs = Array.isArray(parsed) ? parsed : [];
+        return pairs.map((pair) => `${pair?.[0]} -> ${pair?.[1]}`).join("; ");
+    }
+
+    if (type === "ordering") {
+        const items = Array.isArray(parsed) ? parsed : [];
+        return items.join(" -> ");
+    }
+
+    return Array.isArray(parsed) ? JSON.stringify(parsed) : String(parsed ?? "");
 }
 
 function resetUI() {
@@ -168,104 +223,97 @@ function renderOrdering(options) {
 
 async function loadQuestion() {
     await checkLoggedIn();
-    resetUI();
     isLoading = true;
     questionText.textContent = "Loading...";
-    optionsGrid.innerHTML = "";
     nextQuestionButton.disabled = true;
     checkAnswerButton.disabled = true;
 
-    const res = await apiRequest("/api/learn/question");
-    
+    try {
+        const res = await apiRequest("/api/learn/question");
 
-    currentQuestion = res;
-    currentType = currentQuestion.type;
+        currentQuestion = res;
+        currentType = currentQuestion.type;
 
-    questionText.textContent = currentQuestion.question;
+        resetUI();
+        questionText.textContent = currentQuestion.question;
 
-    if (currentType === "mcq" || currentType === "truefalse") {
-        renderMCQ(currentQuestion.options);
-    } else if (currentType === "matching") {
-        renderMatching(currentQuestion.column1 || [], currentQuestion.column2 || []);
-    } else if (currentType === "ordering") {
-        renderOrdering(currentQuestion.options || []);
-    } else {
-        renderInput();
+        if (currentType === "mcq" || currentType === "truefalse") {
+            renderMCQ(currentQuestion.options);
+        } else if (currentType === "matching") {
+            renderMatching(currentQuestion.column1 || [], currentQuestion.column2 || []);
+        } else if (currentType === "ordering") {
+            renderOrdering(currentQuestion.options || []);
+        } else {
+            renderInput();
+        }
+
+        syncCheckButtonState();
+    } catch (err) {
+        answerStatus.textContent = err?.message || "Failed to load question.";
+        answerStatus.style.color = "red";
+        questionText.textContent = currentQuestion?.question || "Failed to load question.";
+        syncCheckButtonState();
+        nextQuestionButton.disabled = false;
+    } finally {
+        isLoading = false;
     }
-
-    if (currentType === "mcq" || currentType === "truefalse") {
-        checkAnswerButton.disabled = true;
-    }
-    isLoading = false;
 }
 
 checkAnswerButton.onclick = async () => {
     if (isLoading || checkAnswerButton.disabled) return;
     checkAnswerButton.disabled = true;
     let answer;
-    let isCorrect = false;
     let userAnswerText = "";
     let correctAnswerText = "";
+    let isCorrect = false;
 
-    if (currentType === "mcq" || currentType === "truefalse") {
-        answer = selectedAnswer;
-        isCorrect = answer && answer === currentQuestion.correctAnswer;
-        userAnswerText = answer || "";
-        correctAnswerText = currentQuestion.correctAnswer || "";
-    } else if (currentType === "matching") {
-        const column1 = currentQuestion.column1 || [];
-        const column2 = currentQuestion.column2 || [];
-        if (column1.length === 0 || column2.length === 0) {
-            answerStatus.textContent = "Matching data is missing.";
-            answerStatus.style.color = "red";
-            return;
+    try {
+        if (currentType === "mcq" || currentType === "truefalse") {
+            answer = selectedAnswer;
+            userAnswerText = answer || "";
+            correctAnswerText = currentQuestion.correctAnswer || "";
+        } else if (currentType === "matching") {
+            const column1 = currentQuestion.column1 || [];
+            const column2 = currentQuestion.column2 || [];
+            if (column1.length === 0 || column2.length === 0) {
+                answerStatus.textContent = "Matching data is missing.";
+                answerStatus.style.color = "red";
+                return;
+            }
+
+            const missing = column1.some((item) => !matchingSelections[item]);
+            if (missing) {
+                answerStatus.textContent = "Please match all items.";
+                answerStatus.style.color = "red";
+                return;
+            }
+
+            answer = column1.map((item) => [item, matchingSelections[item]]);
+
+            userAnswerText = answer.map((pair) => `${pair[0]} -> ${pair[1]}`).join("; ");
+            correctAnswerText = formatObjectiveAnswer(currentQuestion.correctAnswer, currentType);
+        } else if (currentType === "ordering") {
+            const options = currentQuestion.options || [];
+            if (orderingSelection.length !== options.length) {
+                answerStatus.textContent = "Please select all items in order.";
+                answerStatus.style.color = "red";
+                return;
+            }
+
+            answer = orderingSelection.slice();
+
+            userAnswerText = answer.join(" -> ");
+            correctAnswerText = formatObjectiveAnswer(currentQuestion.correctAnswer, currentType);
+        } else {
+            answer = document.getElementById("textAnswer").value.trim();
+            if (!answer) {
+                return;
+            }
+            userAnswerText = answer || "";
+            correctAnswerText = currentQuestion.sampleAnswer || currentQuestion.correctAnswer || "";
         }
 
-        const missing = column1.some((item) => !matchingSelections[item]);
-        if (missing) {
-            answerStatus.textContent = "Please match all items.";
-            answerStatus.style.color = "red";
-            return;
-        }
-
-        answer = column1.map((item) => [item, matchingSelections[item]]);
-
-        const correct = typeof currentQuestion.correctAnswer === "string"
-            ? JSON.parse(currentQuestion.correctAnswer)
-            : currentQuestion.correctAnswer;
-
-        const normalize = (pairs) => pairs
-            .map((pair) => [String(pair[0]), String(pair[1])])
-            .sort((a, b) => a[0].localeCompare(b[0]));
-
-        isCorrect = JSON.stringify(normalize(answer)) === JSON.stringify(normalize(correct || []));
-
-        userAnswerText = answer.map((pair) => `${pair[0]} -> ${pair[1]}`).join("; ");
-        correctAnswerText = (correct || []).map((pair) => `${pair[0]} -> ${pair[1]}`).join("; ");
-    } else if (currentType === "ordering") {
-        const options = currentQuestion.options || [];
-        if (orderingSelection.length !== options.length) {
-            answerStatus.textContent = "Please select all items in order.";
-            answerStatus.style.color = "red";
-            checkAnswerButton.disabled = false;
-            return;
-        }
-
-        answer = orderingSelection.slice();
-        const correct = typeof currentQuestion.correctAnswer === "string"
-            ? JSON.parse(currentQuestion.correctAnswer)
-            : currentQuestion.correctAnswer;
-
-        isCorrect = JSON.stringify(answer) === JSON.stringify(correct || []);
-        userAnswerText = answer.join(" -> ");
-        correctAnswerText = (correct || []).join(" -> ");
-    } else {
-        answer = document.getElementById("textAnswer").value.trim();
-        if (!answer) {
-            checkAnswerButton.disabled = false;
-            return;
-        }
-        const res = await apiRequest("/api/learn/check", 
+        const res = await apiRequest("/api/learn/check",
             "POST",
             {
                 question: currentQuestion.question,
@@ -273,28 +321,52 @@ checkAnswerButton.onclick = async () => {
                 type: currentQuestion.type
             }
         );
-        
-        isCorrect = !!res.correct;
-        if (res.explanation) {
-            explanationEl.textContent = res.explanation;
+
+        const checkResult = res.data || res;
+
+        isCorrect = !!checkResult.correct;
+        if (checkResult.explanation) {
+            explanationEl.textContent = checkResult.explanation;
         }
-        userAnswerText = answer || "";
-        correctAnswerText = currentQuestion.sampleAnswer || currentQuestion.correctAnswer || "";
-    }
 
-    userAnswerEl.textContent = userAnswerText;
-    correctAnswerEl.textContent = correctAnswerText;
-    if (!explanationEl.textContent) {
-        explanationEl.textContent = currentQuestion.explanation || "";
-    }
+        if (checkResult.answer != null) {
+            if (Array.isArray(checkResult.answer)) {
+                if (currentType === "matching") {
+                    correctAnswerText = checkResult.answer.map((pair) => `${pair[0]} -> ${pair[1]}`).join("; ");
+                } else if (currentType === "ordering") {
+                    correctAnswerText = checkResult.answer.join(" -> ");
+                } else {
+                    correctAnswerText = JSON.stringify(checkResult.answer);
+                }
+            } else {
+                correctAnswerText = String(checkResult.answer);
+            }
+        }
 
-    answerStatus.textContent = isCorrect ? "Correct" : "Wrong";
-    answerStatus.style.color = isCorrect ? "green" : "red";
+        userAnswerEl.textContent = userAnswerText;
+        correctAnswerEl.textContent = correctAnswerText;
+        if (!explanationEl.textContent) {
+            explanationEl.textContent = currentQuestion.explanation || "";
+        }
 
-    resultPanel.classList.remove("hidden");
-    nextQuestionButton.disabled = false;
-    if (currentType === "ordering") {
-        clearOrderButton.disabled = true;
+        answerStatus.textContent = isCorrect ? "Correct" : "Wrong";
+        answerStatus.style.color = isCorrect ? "green" : "red";
+
+        resultPanel.classList.remove("hidden");
+        nextQuestionButton.disabled = false;
+        if (currentType === "ordering") {
+            clearOrderButton.disabled = true;
+        }
+    } catch (err) {
+        answerStatus.textContent = err?.message || "Failed to check answer.";
+        answerStatus.style.color = "red";
+        nextQuestionButton.disabled = false;
+    } finally {
+        if (resultPanel.classList.contains("hidden")) {
+            syncCheckButtonState();
+        } else {
+            checkAnswerButton.disabled = true;
+        }
     }
 };
 

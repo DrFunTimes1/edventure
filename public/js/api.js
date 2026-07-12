@@ -12,11 +12,20 @@ async function apiRequest(endpoint, method = "GET", body = null) {
     }
 
     const response = await fetch(endpoint, options);
+    const responseText = await response.text();
 
-    const data = await response.json();
+    let data = {};
+
+    if (responseText.trim()) {
+        try {
+            data = JSON.parse(responseText);
+        } catch {
+            data = { raw: responseText };
+        }
+    }
 
     if (!response.ok) {
-        const err = new Error(data.error || "Request failed");
+        const err = new Error(data.error || data.raw || response.statusText || "Request failed");
         err.status = response.status;
         throw err;
     }
