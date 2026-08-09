@@ -1,8 +1,15 @@
 import fs from "fs/promises";
 
 export function createLearnHelpers({ ai, groq, db }) {
-    async function loadChapter(filePath) {
-        return await fs.readFile(filePath, "utf8");
+    const logPrefix = "[LEARN/SHARED.JS]";
+
+    async function loadChapter(grade, subject, chapter) {
+        const text = await fs.readFile(
+            `books/grade ${grade}/${subject}/${chapter}.json`,
+            "utf8"
+        );
+
+        return safeParseJson(text);
     }
 
     function roundScore(score, precision = 4) {
@@ -10,20 +17,335 @@ export function createLearnHelpers({ ai, groq, db }) {
             return null;
         }
 
-        const clamped = Math.max(0, Math.min(1, score));
+        const rounded = roundNumber(score, precision);
+
+        if (!Number.isFinite(rounded)) {
+            return null;
+        }
+
+        return Math.max(0, Math.min(1, rounded));
+    }
+
+    function roundNumber(value, precision = 4) {
+        if (!Number.isFinite(value)) {
+            return null;
+        }
+
         const factor = 10 ** precision;
 
-        return Math.round((clamped + Number.EPSILON) * factor) / factor;
+        return Math.round((value + Number.EPSILON) * factor) / factor; //sometimes multiplication with decimals behaves really wierdly in js, so to make sure that doesn't happen, we use epsilon to nudge the number forward a lil bit
     }
 
     function normalizeConceptName(value) {
         const text = String(value ?? "").trim().replace(/\s+/g, " ");
-
         return text ? text.toLowerCase() : "";
     }
 
+    function toTitleCase(value) {
+        return String(value ?? "")
+            .trim()
+            .replace(/\s+/g, " ")
+            .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    async function getSubjectStats(nonNormalizedMastery = {}, req) {
+        const mastery = normalizeMastery(nonNormalizedMastery);
+        const subjects = {}
+
+        for (const entry of Object.values(mastery)) {
+            if (!entry?.subject) continue;
+
+            const subject = entry.subject;
+            const score = Number(entry.score);
+
+            if (!Number.isFinite(score)) {
+                continue;
+            }
+
+            if (!subjects[subject]) {
+                subjects[subject] = {
+                    total: 0,
+                    count: 0
+                };
+            }
+
+            subjects[subject].total += score;
+            subjects[subject].count++;
+        }
+
+        const averages = {};
+        for (const [subject, data] of Object.entries(subjects)) {
+            averages[subject] = roundScore(data.total / data.count);
+        }
+
+        const lessonHistory = await loadLessonHistory(req);
+
+        const prevLessons =
+            lessonHistory
+                .slice(-10)
+                .map(lesson => lesson.subject)
+                .filter(Boolean);
+
+        return { averages, prevLessons };
+    }
+
+    async function buildNextLesson({
+            mastery,
+            grade,
+            subject
+        },
+        req
+    ) {
+        console.log(`${logPrefix} Building next lesson`, {
+            grade
+        });
+
+        const normalizedMastery = normalizeMastery(mastery || {});
+        const subjectStats = await getSubjectStats(normalizedMastery, req);
+        const lessonHistory = await loadLessonHistory(req);
+        const preferredSubject = normalizeConceptName(subject);
+        const {
+            averages,
+            prevLessons
+        } = subjectStats;
+
+        const chosenSubject = preferredSubject || normalizeConceptName((await chooseSubject(averages, prevLessons))?.subject) || "maths";
+        console.log(`${logPrefix} Subject chosen: ${chosenSubject}`);
+
+        const chapter =
+            await chooseChapter({
+                subject: chosenSubject,
+                mastery: normalizedMastery,
+                recentChapters:
+                    lessonHistory
+                        .filter(lesson => lesson.subject === chosenSubject)
+                        .slice(-10)
+                        .map(lesson => lesson.chapter_key),
+                grade
+            });
+
+        console.log(`${logPrefix} Chapter chosen: ${chapter?.chapterKey ?? null}`);
+
+        const chapterData =
+            await loadChapter(
+                grade,
+                    chosenSubject,
+                chapter.chapterKey
+            );
+
+        const concepts =
+            await chooseConcepts({
+                chapter: chapterData,
+                mastery: normalizedMastery,
+                recentLessons:
+                    lessonHistory.slice(-10)
+            });
+
+        console.log(`${logPrefix} Concepts chosen: ${JSON.stringify(concepts?.concepts ?? [])}`);
+        console.log(`${logPrefix} Lesson type: ${concepts?.lessonType ?? null}`);
+        console.log(`${logPrefix} Target mastery: ${concepts?.targetMastery ?? null}`);
+
+        return {
+            subject: chosenSubject,
+            chapter: chapterData.chapter,
+            chapterKey: chapter.chapterKey,
+            concepts: concepts.concepts,
+            lessonType: concepts.lessonType,
+            targetMastery: concepts.targetMastery,
+            maxQuestions: concepts.maxQuestions,
+        };
+    }
+
+    function filterChapterConcepts(chapterData, lessonConcepts) {
+        const chapterObject = chapterData && typeof chapterData === "object" && !Array.isArray(chapterData)
+            ? chapterData
+            : {};
+
+        const lessonConceptSet = new Set(
+            normalizeConceptList(lessonConcepts)
+        );
+
+        const filteredConcepts = {};
+
+        for (const [conceptName, conceptValue] of Object.entries(chapterObject.concepts || {})) {
+            if (lessonConceptSet.has(normalizeConceptName(conceptName))) {
+                filteredConcepts[conceptName] = conceptValue;
+            }
+        }
+
+        console.log(`${logPrefix} Filtered chapter concepts: ${JSON.stringify(Object.keys(filteredConcepts))}`);
+
+        return {
+            ...chapterObject,
+            concepts: filteredConcepts
+        };
+    }
+
+    async function chooseSubject(averages, prevLessons) {
+        const prompt = `
+            Choose the best subject to study next.
+
+            Subject averages:
+            ${JSON.stringify(averages, null, 2)}
+
+            Recent subjects:
+            ${JSON.stringify(prevLessons)}
+
+            Rules:
+            - Prefer weaker subjects.
+            - Avoid repeating the same subject too often.
+            - Occasionally revisit strong subjects.
+            - Balance engagement and improvement.
+
+            Return:
+
+            {
+                "subject": "..."
+            }
+        `;
+        const raw = await genResponse(prompt);
+        const clean = fixJson(raw);
+        const subject = safeParseJson(clean);
+
+        console.log(`${logPrefix} Subject chosen: ${subject?.subject ?? null}`);
+
+        return subject;
+    }
+
+    async function chooseChapter({
+        subject,
+        mastery,
+        recentChapters = [],
+        grade
+    }) {
+        const chapters = await fs.readdir(
+            `books/grade ${grade}/${subject}`
+        );
+
+        const chapterStats = {};
+
+        for (const chapterFile of chapters) {
+            const chapterKey = chapterFile.replace(".json", "");
+            const chapterData = await loadChapter(
+                grade,
+                subject,
+                chapterKey
+            );
+
+            const concepts = Object.keys(
+                chapterData.concepts || {}
+            );
+
+            const scores = concepts
+                .map(concept =>
+                    mastery[normalizeConceptName(concept)]?.score
+                )
+                .filter(Number.isFinite);
+
+            chapterStats[chapterKey] = {
+                averageMastery:
+                    scores.length
+                        ? roundScore(
+                            scores.reduce((a, b) => a + b, 0) / scores.length
+                        )
+                        : null
+            };
+        }
+
+        const prompt = `
+            You are selecting the next chapter.
+
+            Subject:
+            ${subject}
+
+            Chapter data:
+            ${JSON.stringify(chapterStats, null, 2)}
+
+            Recent chapters:
+            ${JSON.stringify(recentChapters, null, 2)}
+
+            Rules:
+            - Prefer weaker chapters.
+            - Avoid repeating recent chapters.
+            - Follow logical progression.
+            - Revision is allowed if useful.
+
+            Return ONLY JSON:
+
+            {
+                "chapterKey":""
+            }
+        `;
+
+        const raw = await genResponse(prompt);
+        const clean = fixJson(raw);
+        const chapter = safeParseJson(clean);
+
+        console.log(`${logPrefix} Chapter chosen: ${chapter?.chapterKey ?? null}`);
+
+        return chapter;
+    }
+
+    async function chooseConcepts({
+        chapter,
+        mastery,
+        recentLessons = []
+    }) {
+        const conceptData = {};
+
+        for (const [concept, data] of Object.entries(
+            chapter.concepts || {}
+        )) {
+            conceptData[concept] = {
+                mastery: mastery[normalizeConceptName(concept)]?.score ?? null,
+                subConcepts: Object.keys(data || {})
+            };
+        }
+
+        const prompt = `
+            You are composing a lesson.
+
+            Concept data:
+            ${JSON.stringify(conceptData, null, 2)}
+
+            Recent lessons:
+            ${JSON.stringify(recentLessons, null, 2)}
+
+            Rules:
+
+            - Prioritize weak concepts.
+            - Include 2-4 concepts.
+            - Avoid repeating the exact same lesson.
+            - Sometimes include stronger concepts for confidence.
+            - Follow natural prerequisite order.
+
+            Return ONLY JSON:
+
+            {
+                "concepts":[],
+                "lessonType":"practice",
+                "targetMastery":0.8,
+                "maxQuestions":10
+            }
+        `;
+
+        const raw = await genResponse(prompt);
+        const result = safeParseJson(fixJson(raw));
+
+        console.log(`${logPrefix} Concepts chosen: ${JSON.stringify(normalizeConceptList(result?.concepts).map(toTitleCase))}`);
+        console.log(`${logPrefix} Lesson type: ${result?.lessonType || "practice"}`);
+        console.log(`${logPrefix} Target mastery: ${Number(result?.targetMastery ?? 0.8)}`);
+
+        return {
+            concepts: normalizeConceptList(result?.concepts).map(toTitleCase),
+            lessonType: result?.lessonType || "practice",
+            targetMastery: Number(result?.targetMastery ?? 0.8),
+            maxQuestions: Number(result?.maxQuestions ?? 10),
+        };
+    }
+
     function normalizeConceptList(value) {
-        const items = Array.isArray(value) ? value : value == null ? [] : [value];
+        const items = Array.isArray(value) ? value : (value == null ? [] : [value]);
         const normalized = [];
         const seen = new Set();
 
@@ -153,27 +475,42 @@ export function createLearnHelpers({ ai, groq, db }) {
     }
 
     async function loadChapterFromSession(req, chapterKey) {
-        const key = chapterKey == null ? null : String(chapterKey);
+        const key = String(chapterKey ?? "").trim();
 
         if (!key) {
-            return "";
+            return null;
         }
 
-        req.session.chapterSummary ??= {};
+        const subject =
+            req.session.currentLesson?.subject
+            || req.session.subject
+            || "maths";
 
-        if (typeof req.session.chapterSummary[key] === "string") {
-            return req.session.chapterSummary[key];
+        const cacheKey =
+            `${subject}:${key}`;
+
+        req.session.chapterCache ??= {};
+
+        if (req.session.chapterCache[cacheKey]) {
+            return req.session.chapterCache[cacheKey];
         }
-
-        const filePath = `books/grade ${req.session.grade}/${req.session.subject}/${key}.txt`;
 
         try {
-            const chapterText = await loadChapter(filePath);
-            req.session.chapterSummary[key] = chapterText;
-            return chapterText;
-        } catch {
-            req.session.chapterSummary[key] = "";
-            return "";
+            const chapterData =
+                await loadChapter(
+                    req.session.grade,
+                    subject,
+                    key
+                );
+
+            req.session.chapterCache[cacheKey] =
+                chapterData;
+
+            return chapterData;
+        }
+        catch {
+            req.session.chapterCache[cacheKey] = null;
+            return null;
         }
     }
 
@@ -284,11 +621,92 @@ export function createLearnHelpers({ ai, groq, db }) {
         return normalizeObjectiveAnswer(answer, type) === normalizeObjectiveAnswer(correctAnswer, type);
     }
 
+    async function saveLessonHistory(req, lesson, progress) {
+        if (!req.session.userId) {
+            return;
+        }
+
+        await db`
+            INSERT INTO lesson_history
+            (
+                user_id,
+                subject,
+                chapter,
+                chapter_key,
+                concepts,
+                mastery_gain,
+                questions_asked,
+                lesson_type
+            )
+            VALUES
+            (
+                ${req.session.userId},
+                ${lesson?.subject ?? null},
+                ${lesson?.chapter ?? null},
+                ${lesson?.chapterKey ?? null},
+                ${JSON.stringify(lesson?.concepts ?? [])}::jsonb,
+                ${progress.masteryGain ?? 0},
+                ${progress.questionsAsked ?? 0},
+                ${lesson?.lessonType ?? null}
+            )
+        `;
+    }
+
+    async function loadLessonHistory(req) {
+        if (!req.session.userId) {
+            return [];
+        }
+        const rows = await db`
+            SELECT *
+            FROM lesson_history
+            WHERE user_id =
+            ${req.session.userId}
+            ORDER BY completed_at ASC
+        `;
+        return rows;
+    }
+
+    function getAcademicYear() {
+        const now = new Date();
+        return now.getMonth() >= 3
+            ? now.getFullYear()
+            : now.getFullYear() - 1;
+    }
+
+    async function loadStudentGrade(req) {
+        const year = getAcademicYear();
+
+        const rows = await db`
+            SELECT grade, academic_year
+            FROM users
+            WHERE id=${req.session.userId}
+            `;
+        if (!rows.length) return null;
+        
+        let grade = rows[0].grade;
+
+        if (rows[0].academic_year < year) {
+            grade++;
+            await db`
+                UPDATE users
+                SET
+                    grade=${grade},
+                    academic_year=${year}
+                WHERE id=${req.session.userId}
+            `;
+        }
+        req.session.grade = grade;
+        return grade;
+    }
+
     return {
         db,
         loadChapter,
         roundScore,
         normalizeConceptName,
+        toTitleCase,
+        getSubjectStats,
+        buildNextLesson,
         normalizeConceptList,
         safeParseJson,
         normalizeMasteryEntry,
@@ -297,8 +715,16 @@ export function createLearnHelpers({ ai, groq, db }) {
         calculateTier,
         pickRandomChapter,
         loadChapterFromSession,
+        filterChapterConcepts,
         genResponse,
         fixJson,
-        compareObjectiveAnswer
+        compareObjectiveAnswer,
+        roundNumber,
+        saveLessonHistory,
+        loadLessonHistory,
+        loadStudentGrade,
+        chooseSubject,
+        chooseChapter,
+        chooseConcepts
     };
 }

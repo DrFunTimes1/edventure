@@ -12,6 +12,7 @@
     "@google/genai": "^2.2.0",
     "@neondatabase/serverless": "^1.1.0",
     "bcrypt": "^6.0.0",
+    "connect-redis": "^10.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
@@ -20,6 +21,7 @@
     "fs": "^0.0.1-security",
     "groq-sdk": "^1.2.0",
     "mathjs": "^15.2.0",
+    "redis": "^6.2.0",
     "sqlite3": "^6.0.1"
   }
 }

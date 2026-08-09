@@ -10,21 +10,33 @@ export default function registerCheckRoute(router, helpers) {
         fixJson,
         compareObjectiveAnswer,
         roundScore,
+        roundNumber,
         safeParseJson,
-        normalizeConceptList
+        normalizeConceptList,
+        buildNextLesson,
+        saveLessonHistory
     } = helpers;
     const objectiveTypes = new Set(["mcq", "truefalse", "matching", "ordering"]);
+    const logPrefix = "[LEARN/CHECK.JS]";
+    const MAX_MASTERY_GAIN = 0.08;
+    const MAX_MASTERY_LOSS = 0.08;
 
-    function getSubjectiveMasteryShift(type, score) {
-        const normalizedScore = Number.isFinite(score) ? Math.max(0, Math.min(1, score)) : 0.5;
+    function clampScore(value) {
+        if (!Number.isFinite(value)) {
+            return 0.5;
+        }
 
-        let maxShift = 0.05;
+        return Math.max(0, Math.min(1, value));
+    }
 
-        if (type === "longqa") maxShift = 0.08;
-        if (type === "shortqa") maxShift = 0.06;
-        if (type === "fillblanks") maxShift = 0.05;
+    function getMasteryDeltaFromScore(score) {
+        const normalizedScore = clampScore(score);
+        const rawDelta = (normalizedScore - 0.5) * 2;
+        const limitedDelta = rawDelta >= 0
+            ? rawDelta * MAX_MASTERY_GAIN
+            : rawDelta * MAX_MASTERY_LOSS;
 
-        return roundScore((normalizedScore - 0.5) * 2 * maxShift, 4) ?? 0;
+        return roundNumber(Math.max(-MAX_MASTERY_LOSS, Math.min(MAX_MASTERY_GAIN, limitedDelta)), 4) ?? 0;
     }
 
     router.post('/check', async (req, res) => {
@@ -33,11 +45,26 @@ export default function registerCheckRoute(router, helpers) {
                 return res.status(401).json({ status: "401 UNAUTHORIZED" });
             }
 
-            const { question, answer, type } = req.body;
+            const { question, answer, type, questionId } = req.body;
 
             if (!question || !type) {
                 return res.status(400).json({ error: "Invalid check data" });
             }
+
+            const activeQuestionId = String(req.session.currentQuestionId ?? "").trim();
+            const submittedQuestionId = String(questionId ?? "").trim();
+
+            if (!activeQuestionId || !submittedQuestionId || submittedQuestionId !== activeQuestionId || req.session.questionChecked || req.session.questionCheckPending) {
+                console.log(`${logPrefix} Duplicate submission blocked`);
+                return res.status(200).json({
+                    alreadyChecked: true,
+                    questionCheckPending: Boolean(req.session.questionCheckPending),
+                    message: "This question has already been checked."
+                });
+            }
+
+            req.session.questionCheckPending = true;
+            console.log(`${logPrefix} Question submission accepted`);
 
             const isSubjective = !objectiveTypes.has(String(type || "")) && req.session.currentSubjective !== false;
 
@@ -49,6 +76,8 @@ export default function registerCheckRoute(router, helpers) {
                 return res.status(400).json({ error: "Invalid check data" });
             }
 
+            console.log(`${logPrefix} User answer: ${String(answer).slice(0, 160)}`);
+
             req.session.mastery = normalizeMastery(req.session.mastery || {});
             req.session.lessonProgress ??= {
                 questionsAsked: 0,
@@ -56,22 +85,14 @@ export default function registerCheckRoute(router, helpers) {
                 masteryGain: 0
             };
 
-            console.debug("[learn/check] grading start", {
-                type,
-                isSubjective,
-                question: String(question).slice(0, 120)
-            });
+            console.log(`${logPrefix} Grading start: type=${type}, subjective=${isSubjective}, question=${String(question).slice(0, 120)}`);
 
             let data;
 
             if (!isSubjective) {
                 const expectedAnswer = req.session.correctAnswer;
 
-                console.debug("[learn/check] objective answer", {
-                    type,
-                    answer,
-                    expectedAnswer
-                });
+                console.log(`${logPrefix} Objective answer: expected=${JSON.stringify(expectedAnswer)}`);
 
                 data = {
                     correct: compareObjectiveAnswer(answer, expectedAnswer, type),
@@ -79,7 +100,10 @@ export default function registerCheckRoute(router, helpers) {
                     answer: expectedAnswer
                 };
             } else {
-                const syllabusText = await loadChapterFromSession(req, req.session.currentChapter);
+                const syllabusText = await loadChapterFromSession(
+                    req,
+                    req.session.currentLesson?.chapterKey ?? req.session.currentChapter
+                );
 
                 const prompt = `
                     Return ONLY JSON:
@@ -89,7 +113,42 @@ export default function registerCheckRoute(router, helpers) {
                         "explanation": "..."
                     }
 
-                    Be warm, encouraging, and student-friendly.
+                    STYLE (MANDATORY)
+
+                    The explanation MUST sound like a real teacher talking to a student.
+                    Judge the answer relative to the question.
+                    If the question asks for only a final answer, a short correct answer can score highly.
+                    If the question asks for reasoning or explanation, missing that reasoning must lower the score.
+                    Judge correctness, completeness, relevance, reasoning, and whether the important parts of the question were answered.
+                    Do not automatically reward a short answer just because it is short.
+                    Do not automatically penalize a short answer if the question only requires a concise response.
+
+                    If the answer is correct:
+                    - Start with encouragement such as:
+                    "Great job!"
+                    "Excellent work!"
+                    "Nice thinking!"
+                    "That's correct!"
+                    - Then explain WHY the answer is correct in 1-2 short sentences.
+
+                    If the answer is partly correct:
+                    - First praise what was correct.
+                    - Then gently explain what was missing.
+                    - Never sound critical or robotic.
+
+                    If the answer is incorrect:
+                    - Never simply state the correct answer.
+                    - Start with something encouraging like:
+                    "Good try!"
+                    "Nice attempt!"
+                    "You're on the right track!"
+                    "Don't worry—this one's a little tricky."
+                    - Then explain the idea clearly and kindly.
+
+                    Never sound like a textbook.
+                    Never write only a definition.
+                    Talk directly to the student using "you".
+                    Keep explanations under 60 words.
                     Keep the explanation short: one or two sentences is enough.
                     Judge the answer by accuracy, completeness, clarity, relevance, and length.
                     Accept alternative correct answers when they show the same understanding.
@@ -127,32 +186,15 @@ export default function registerCheckRoute(router, helpers) {
                 req.session.currentConcepts?.length ? req.session.currentConcepts : data.concept
             );
 
-            const rawSubjectiveScore = Number(data.score);
-            const fallbackScore = data.correct ? 0.75 : 0.25;
-            const qualityScore = Number.isFinite(rawSubjectiveScore)
-                ? rawSubjectiveScore
-                : fallbackScore;
-            const effectiveScore = data.correct
-                ? Math.max(0.5, Math.min(1, qualityScore))
-                : Math.min(0.5, Math.max(0, qualityScore));
+            const aiScore = isSubjective
+                ? Number(data.score)
+                : (data.correct ? 1 : 0);
+            const masteryScore = Number.isFinite(aiScore)
+                ? aiScore
+                : (isSubjective ? 0.5 : (data.correct ? 1 : 0));
+            const masteryDelta = getMasteryDeltaFromScore(masteryScore);
 
-            let difficultyImpact = 0.03;
-
-            if (type === "longqa") difficultyImpact = 0.08;
-            if (type === "shortqa") difficultyImpact = 0.06;
-            if (type === "mcq") difficultyImpact = 0.04;
-            if (type === "truefalse") difficultyImpact = 0.02;
-
-            if (!data.correct) {
-                if (type === "longqa") difficultyImpact = -0.08;
-                if (type === "shortqa") difficultyImpact = -0.06;
-                if (type === "mcq") difficultyImpact = -0.04;
-                if (type === "truefalse") difficultyImpact = -0.02;
-            }
-
-            if (isSubjective) {
-                difficultyImpact = getSubjectiveMasteryShift(type, effectiveScore);
-            }
+            console.log(`${logPrefix} AI score: ${Number(masteryScore).toFixed(3)}`);
 
             for (const concept of concepts) {
                 const existingEntry = req.session.mastery[concept];
@@ -161,24 +203,24 @@ export default function registerCheckRoute(router, helpers) {
                     subject: req.session.subject ?? null,
                     chapter: req.session.currentChapter ?? null
                 };
-                const prev = getMasteryScore(normalizedEntry) ?? 0.5;
-                const nextScore = roundScore(prev + difficultyImpact) ?? prev;
+                const previousScore = getMasteryScore(normalizedEntry) ?? 0.5;
+                const nextScore = roundScore(previousScore + masteryDelta) ?? previousScore;
 
                 req.session.mastery[concept] = {
                     ...normalizedEntry,
                     score: nextScore
                 };
 
-                console.debug("[learn/check] mastery update", {
-                    concept,
-                    prev,
-                    next: nextScore,
-                    delta: difficultyImpact,
-                    qualityScore: effectiveScore
-                });
+                console.log(`${logPrefix} Previous mastery: ${Number(previousScore).toFixed(3)} | Mastery delta: ${Number(masteryDelta).toFixed(3)} | New mastery: ${Number(nextScore).toFixed(3)} | Concept: ${concept}`);
             }
 
             req.session.tier = calculateTier(req.session.mastery);
+            req.session.masteryAnalytics = (req.session.mastery);
+            req.session.questionCheckPending = false;
+            req.session.questionChecked = true;
+
+            console.log(`${logPrefix} Correct: ${Boolean(data.correct)}`);
+            console.log(`${logPrefix} Question marked as checked`);
 
             await db`
                 UPDATE progress
@@ -202,7 +244,9 @@ export default function registerCheckRoute(router, helpers) {
                 totalGain += after - before;
             }
 
-            req.session.lessonProgress.masteryGain = roundScore(totalGain, 4) ?? totalGain;
+            req.session.lessonProgress.masteryGain = roundNumber(totalGain, 4) ?? totalGain;
+
+            console.log(`${logPrefix} Mastery change: ${req.session.lessonProgress.masteryGain >= 0 ? "+" : ""}${Number(req.session.lessonProgress.masteryGain ?? 0).toFixed(2)}`);
 
             req.session.lessonProgress.questionsAsked++;
 
@@ -210,13 +254,49 @@ export default function registerCheckRoute(router, helpers) {
                 req.session.lessonProgress.masteryGain >= 0.15 ||
                 req.session.lessonProgress.questionsAsked >= 15;
 
+            const completedMasteryGain = req.session.lessonProgress.masteryGain;
+            const completedQuestionsAsked = req.session.lessonProgress.questionsAsked;
+
+            let nextLesson = req.session.currentLesson ?? null;
+
+            if (lessonFinished) {
+                req.session.lessonHistory ??= [];
+                await saveLessonHistory(
+                    req,
+                    req.session.currentLesson,
+                    req.session.lessonProgress
+                );
+
+                req.session.lessonHistory = req.session.lessonHistory.slice(-20);
+
+                nextLesson = await buildNextLesson({
+                    mastery: req.session.mastery,
+                    lessonHistory: req.session.lessonHistory,
+                    grade: req.session.grade,
+                    subject: req.session.subject || req.session.currentLesson?.subject || "maths",
+                    currentLesson: req.session.currentLesson || null
+                }, req);
+
+                req.session.currentLesson = nextLesson;
+                req.session.currentChapter = nextLesson.chapterKey ?? req.session.currentChapter ?? null;
+                req.session.subject = nextLesson.subject || req.session.subject || "maths";
+                req.session.lessonProgress = {
+                    questionsAsked: 0,
+                    masteryStart: structuredClone(req.session.mastery || {}),
+                    masteryGain: 0
+                };
+            }
+
             res.status(200).json({
                 data,
                 lessonFinished,
-                masteryGain: req.session.lessonProgress.masteryGain,
-                questionsAsked: req.session.lessonProgress.questionsAsked
+                masteryGain: completedMasteryGain,
+                questionsAsked: completedQuestionsAsked,
+                nextLesson: lessonFinished ? nextLesson : null
             });
         } catch (err) {
+            req.session.questionCheckPending = false;
+            console.error(`${logPrefix} ${String(err)}`);
             return res.status(500).json({ status: "500 INTERNAL SERVER ERROR" });
         }
     });

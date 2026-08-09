@@ -1,0 +1,87 @@
+{
+  "chapter": 2,
+  "title": "Lines and Angles",
+  "subject": "maths",
+  "concepts": {
+    "basic geometric objects": {
+      "summary": "Fundamental objects used in geometry.",
+      "subtopics": {
+        "point": {
+          "definition": "A location with no size."
+        },
+        "line segment": {
+          "definition": "The shortest path between two points with fixed length."
+        },
+        "line": {
+          "definition": "A straight path extending infinitely in both directions."
+        },
+        "ray": {
+          "definition": "A path starting at one point and extending infinitely in one direction."
+        }
+      }
+    },
+
+    "angles": {
+      "summary": "Figures formed by two rays sharing a common vertex.",
+      "subtopics": {
+        "angle": {
+          "definition": "A figure formed by two rays with a common vertex."
+        },
+        "acute angle": {
+          "definition": "An angle smaller than 90°."
+        },
+        "right angle": {
+          "definition": "An angle equal to 90°."
+        },
+        "obtuse angle": {
+          "definition": "An angle greater than 90° and less than 180°."
+        },
+        "straight angle": {
+          "definition": "An angle equal to 180°."
+        },
+        "reflex angle": {
+          "definition": "An angle greater than 180° and less than 360°."
+        }
+      }
+    },
+
+    "angle measurement": {
+      "summary": "Methods and units used to measure angles.",
+      "subtopics": {
+        "degree": {
+          "definition": "The standard unit used to measure angles."
+        },
+        "full turn": {
+          "definition": "A complete rotation measuring 360°."
+        },
+        "half turn": {
+          "definition": "A rotation measuring 180°."
+        },
+        "quarter turn": {
+          "definition": "A rotation measuring 90°."
+        },
+        "protractor": {
+          "definition": "An instrument used to measure angles."
+        }
+      }
+    },
+
+    "working with angles": {
+      "summary": "Constructing, comparing, and analyzing angles.",
+      "subtopics": {
+        "drawing angles": {
+          "definition": "Constructing an angle using a protractor."
+        },
+        "angle bisector": {
+          "definition": "A ray that divides an angle into two equal angles."
+        },
+        "comparing angles": {
+          "definition": "Determining which angle is larger by measurement or comparison."
+        },
+        "rotation": {
+          "definition": "Turning around a point; angles measure rotation."
+        }
+      }
+    }
+  }
+}

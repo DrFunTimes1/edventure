@@ -1,0 +1,92 @@
+{
+  "chapter": 1,
+  "title": "Patterns in Mathematics",
+  "subject": "maths",
+  "concepts": {
+    "number patterns": {
+      "summary": "Patterns formed by numbers following a rule.",
+      "subtopics": {
+        "counting numbers": {
+          "definition": "Numbers increasing by 1 each step.",
+          "examples": ["1, 2, 3, 4, 5"]
+        },
+        "odd numbers": {
+          "definition": "Numbers not divisible by 2.",
+          "examples": ["1, 3, 5, 7, 9"]
+        },
+        "even numbers": {
+          "definition": "Numbers divisible by 2.",
+          "examples": ["2, 4, 6, 8, 10"]
+        },
+        "triangular numbers": {
+          "definition": "Numbers formed by adding counting numbers successively.",
+          "examples": ["1, 3, 6, 10"]
+        },
+        "square numbers": {
+          "definition": "Numbers formed by multiplying a number by itself.",
+          "examples": ["1, 4, 9, 16"]
+        },
+        "cube numbers": {
+          "definition": "Numbers formed by multiplying a number by itself twice.",
+          "examples": ["1, 8, 27"]
+        },
+        "virahanka sequence": {
+          "definition": "Each term equals the sum of the previous two terms.",
+          "examples": ["1, 2, 3, 5, 8"]
+        },
+        "powers": {
+          "definition": "Numbers formed using repeated multiplication.",
+          "examples": ["2ⁿ", "3ⁿ"]
+        }
+      }
+    },
+
+    "visual patterns": {
+      "summary": "Patterns represented using shapes and arrangements.",
+      "subtopics": {
+        "square dot patterns": {
+          "definition": "Dots arranged in equal rows and columns forming a square."
+        },
+        "triangle dot patterns": {
+          "definition": "Dots arranged in increasing rows forming a triangle."
+        },
+        "shape representations": {
+          "definition": "The same number can sometimes be represented by different shapes."
+        }
+      }
+    },
+
+    "pattern relationships": {
+      "summary": "Connections between different mathematical patterns.",
+      "subtopics": {
+        "odd sums and squares": {
+          "definition": "Successive odd-number sums produce perfect squares."
+        },
+        "triangular number formation": {
+          "definition": "Triangular numbers are formed from counting-number sums."
+        },
+        "powers of two patterns": {
+          "definition": "Partial sums of powers of two follow predictable growth patterns."
+        }
+      }
+    },
+
+    "geometric patterns": {
+      "summary": "Patterns formed using shapes and geometric structures.",
+      "subtopics": {
+        "polygons": {
+          "definition": "Closed shapes with three or more sides."
+        },
+        "complete graphs": {
+          "definition": "Graphs where every vertex is connected to every other vertex."
+        },
+        "stacked shapes": {
+          "definition": "Shapes that grow layer by layer."
+        },
+        "koch snowflake": {
+          "definition": "A repeating geometric pattern where segments multiply at each stage."
+        }
+      }
+    }
+  }
+}

@@ -3,6 +3,8 @@ import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { neon } from '@neondatabase/serverless';
+import { createClient } from "redis";
+import { RedisStore } from "connect-redis";
 import cors from 'cors';
 import 'dotenv/config';
 
@@ -23,19 +25,32 @@ const app = express();
 const port = process.env.PORT || 3000;
 const db = neon(process.env.DB_URL);
 
+export const redisClient = createClient({
+    url: process.env.REDIS_URL
+});
+redisClient.on("error", (err) => {
+    console.error("[REDIS]", err);
+});
+await redisClient.connect();
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors({
-    origin: true,
+    origin: "http://localhost:5173",
     credentials: true
 }));
 app.use(session({
-    secret: "edventure-secret-key",
+    store: new RedisStore({
+        client: redisClient
+    }),
+
+    secret: process.env.SESSION_SECRET,
+
     resave: false,
     saveUninitialized: false,
+
     cookie: {
-        secure: false,
-        sameSite: "lax"
+        maxAge: 1000 * 60 * 60 * 24 * 30 // 30 days
     }
 }));
 
@@ -61,7 +76,6 @@ const initDb = async () => {
             )
         `;
 
-        // FIX: CRITICAL — user_id MUST be unique for ON CONFLICT to work
         await db`
             CREATE TABLE IF NOT EXISTS progress (
                 user_id TEXT PRIMARY KEY,
@@ -91,6 +105,26 @@ const initDb = async () => {
             EXECUTE FUNCTION set_updated_at()
         `;
 
+        await db`
+            CREATE TABLE IF NOT EXISTS lesson_history (
+                id SERIAL PRIMARY KEY,
+
+                user_id TEXT NOT NULL,
+
+                subject TEXT,
+                chapter TEXT,
+                chapter_key TEXT,
+
+                concepts JSONB DEFAULT '[]'::jsonb,
+
+                mastery_gain REAL DEFAULT 0,
+                questions_asked INTEGER DEFAULT 0,
+
+                lesson_type TEXT,
+
+                completed_at TIMESTAMP DEFAULT NOW()
+            )
+        `;
     } catch (err) {
         console.error("DB init failed:", err);
     }

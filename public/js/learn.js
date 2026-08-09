@@ -1,11 +1,13 @@
-const initForm = document.getElementById("initForm");
 const initPanel = document.getElementById("initPanel");
 const initStatus = document.getElementById("initStatus");
-const languageInput = document.getElementById("languageInput");
-const gradeInput = document.getElementById("gradeInput");
-const chaptersInput = document.getElementById("chaptersInput");
+const welcomeName = document.getElementById("welcomeName");
+const welcomeTier = document.getElementById("welcomeTier");
+const welcomeGrade = document.getElementById("welcomeGrade");
+const focusList = document.getElementById("focusList");
+const startLearningButton = document.getElementById("startLearningButton");
 
 const lessonPanel = document.getElementById("lessonPanel");
+const lessonCompletePanel = document.getElementById("lessonCompletePanel");
 const questionText = document.getElementById("questionText");
 const optionsGrid = document.getElementById("optionsGrid");
 const checkAnswerButton = document.getElementById("checkAnswerButton");
@@ -18,6 +20,10 @@ const correctAnswerEl = document.getElementById("correctAnswer");
 const explanationEl = document.getElementById("explanation");
 
 const nextQuestionButton = document.getElementById("nextQuestionButton");
+const lessonMasteryGain = document.getElementById("lessonMasteryGain");
+const nextLessonTitle = document.getElementById("nextLessonTitle");
+const nextLessonConcepts = document.getElementById("nextLessonConcepts");
+const startNextLessonButton = document.getElementById("startNextLessonButton");
 
 const openDoubtButton = document.getElementById("openDoubtButton");
 const doubtPanel = document.getElementById("doubtPanel");
@@ -33,8 +39,94 @@ let currentType = "";
 let matchingSelections = {};
 let orderingSelection = [];
 let isLoading = false;
+let isCheckingAnswer = false;
+let currentQuestionChecked = false;
+let currentQuestionId = null;
+let currentUser = null;
+let currentLesson = null;
+
+function setAnswerControlsDisabled(disabled) {
+    optionsGrid.querySelectorAll("button, select, textarea, input").forEach((control) => {
+        control.disabled = disabled;
+    });
+
+    clearOrderButton.disabled = disabled || clearOrderButton.classList.contains("hidden");
+}
+
+function setCheckingState(locked, label = null) {
+    isCheckingAnswer = locked;
+    checkAnswerButton.disabled = locked;
+    checkAnswerButton.textContent = label || "Check Answer";
+    setAnswerControlsDisabled(locked);
+}
+
+function clearSubmissionResult() {
+    answerStatus.textContent = "";
+    answerStatus.style.color = "";
+    resultPanel.classList.add("hidden");
+    userAnswerEl.textContent = "";
+    correctAnswerEl.textContent = "";
+    explanationEl.textContent = "";
+}
+
+function renderFocusList(concepts) {
+    focusList.innerHTML = "";
+
+    const items = Array.isArray(concepts) ? concepts.filter(Boolean) : [];
+
+    if (items.length === 0) {
+        const empty = document.createElement("li");
+        empty.textContent = "Your lesson plan will appear here.";
+        focusList.appendChild(empty);
+        return;
+    }
+
+    items.forEach((concept) => {
+        const item = document.createElement("li");
+        item.textContent = concept;
+        focusList.appendChild(item);
+    });
+}
+
+function updateWelcomeSummary(status) {
+    const firstName = currentUser?.fname ? String(currentUser.fname).trim() : "Learner";
+    welcomeName.textContent = `Welcome back, ${firstName}!`;
+    welcomeTier.textContent = `Current Tier: ${status?.tier || "C"}`;
+    welcomeGrade.textContent = `Current Grade: ${status?.grade ?? "Not set"}`;
+    renderFocusList(status?.currentLesson?.concepts || []);
+}
+
+function showLessonComplete(nextLesson, masteryGain) {
+    lessonCompletePanel.classList.remove("hidden");
+    lessonMasteryGain.textContent = `+${Number(masteryGain ?? 0).toFixed(2)}`;
+    nextLessonTitle.textContent = nextLesson?.chapter || "Next lesson ready";
+
+    nextLessonConcepts.innerHTML = "";
+    const concepts = Array.isArray(nextLesson?.concepts) ? nextLesson.concepts : [];
+
+    if (concepts.length === 0) {
+        const item = document.createElement("li");
+        item.textContent = "A fresh lesson plan will be generated when you continue.";
+        nextLessonConcepts.appendChild(item);
+    } else {
+        concepts.forEach((concept) => {
+            const item = document.createElement("li");
+            item.textContent = concept;
+            nextLessonConcepts.appendChild(item);
+        });
+    }
+}
+
+function hideLessonComplete() {
+    lessonCompletePanel.classList.add("hidden");
+}
 
 function syncCheckButtonState() {
+    if (isLoading || isCheckingAnswer || currentQuestionChecked) {
+        checkAnswerButton.disabled = true;
+        return;
+    }
+
     if (currentType === "mcq" || currentType === "truefalse") {
         checkAnswerButton.disabled = !selectedAnswer;
         return;
@@ -59,13 +151,6 @@ function syncCheckButtonState() {
     }
 
     checkAnswerButton.disabled = true;
-}
-
-function parseChapters(input) {
-    return input
-        .split(",")
-        .map((item) => Number(item.trim()))
-        .filter((value) => !Number.isNaN(value));
 }
 
 function parseMaybeJson(value) {
@@ -101,11 +186,7 @@ function resetUI() {
     matchingSelections = {};
     orderingSelection = [];
     optionsGrid.innerHTML = "";
-    answerStatus.textContent = "";
-    resultPanel.classList.add("hidden");
-    userAnswerEl.textContent = "";
-    correctAnswerEl.textContent = "";
-    explanationEl.textContent = "";
+    clearSubmissionResult();
     checkAnswerButton.disabled = true;
     clearOrderButton.classList.add("hidden");
     clearOrderButton.disabled = true;
@@ -223,16 +304,21 @@ function renderOrdering(options) {
 
 async function loadQuestion() {
     await checkLoggedIn();
+    hideLessonComplete();
     isLoading = true;
     questionText.textContent = "Loading...";
     nextQuestionButton.disabled = true;
     checkAnswerButton.disabled = true;
+    checkAnswerButton.textContent = "Check Answer";
 
     try {
         const res = await apiRequest("/api/learn/question");
 
         currentQuestion = res;
         currentType = currentQuestion.type;
+        currentQuestionId = currentQuestion.questionId || null;
+        currentQuestionChecked = false;
+        setCheckingState(false, "Check Answer");
 
         resetUI();
         questionText.textContent = currentQuestion.question;
@@ -259,17 +345,77 @@ async function loadQuestion() {
     }
 }
 
+async function loadLearnerSummary() {
+    try {
+        await checkLoggedIn();
+        const [userResult, learnStatus] = await Promise.all([
+            apiRequest("/api/auth/getUser"),
+            apiRequest("/api/learn/status")
+        ]);
+
+        currentUser = userResult.user || null;
+        currentLesson = learnStatus.currentLesson || null;
+
+        updateWelcomeSummary(learnStatus);
+        initStatus.textContent = "";
+    } catch (err) {
+        initStatus.textContent = err?.message || "Ready to start learning.";
+        renderFocusList([]);
+    }
+}
+
+async function startLearning(){
+    startLearningButton.disabled = true;
+    initStatus.textContent = "Preparing lesson...";
+    try {
+        const res = await apiRequest(
+            "/api/learn/init",
+            "POST",
+            {}
+        );
+
+        currentLesson = res.currentLesson || currentLesson;
+        updateWelcomeSummary({
+            grade: res.grade,
+            tier: res.tier,
+            currentLesson
+        });
+
+        initPanel.classList.add("hidden");
+        lessonPanel.classList.remove("hidden");
+        hideLessonComplete();
+
+        await loadQuestion();
+    } catch(err){
+        initStatus.textContent =
+            err?.message ||
+            "Failed to start lesson.";
+    } finally {
+        startLearningButton.disabled = false;
+    }
+}
+
 checkAnswerButton.onclick = async () => {
-    if (isLoading || checkAnswerButton.disabled) return;
-    checkAnswerButton.disabled = true;
+    if (isLoading || isCheckingAnswer || currentQuestionChecked || checkAnswerButton.disabled) return;
+
+    setCheckingState(true, "Checking...");
+    clearSubmissionResult();
+    nextQuestionButton.disabled = true;
+
     let answer;
     let userAnswerText = "";
     let correctAnswerText = "";
     let isCorrect = false;
+    let requestWasSent = false;
 
     try {
         if (currentType === "mcq" || currentType === "truefalse") {
             answer = selectedAnswer;
+            if (!answer) {
+                setCheckingState(false, "Check Answer");
+                syncCheckButtonState();
+                return;
+            }
             userAnswerText = answer || "";
             correctAnswerText = currentQuestion.correctAnswer || "";
         } else if (currentType === "matching") {
@@ -278,6 +424,7 @@ checkAnswerButton.onclick = async () => {
             if (column1.length === 0 || column2.length === 0) {
                 answerStatus.textContent = "Matching data is missing.";
                 answerStatus.style.color = "red";
+                setCheckingState(false, "Check Answer");
                 return;
             }
 
@@ -285,6 +432,7 @@ checkAnswerButton.onclick = async () => {
             if (missing) {
                 answerStatus.textContent = "Please match all items.";
                 answerStatus.style.color = "red";
+                setCheckingState(false, "Check Answer");
                 return;
             }
 
@@ -297,6 +445,7 @@ checkAnswerButton.onclick = async () => {
             if (orderingSelection.length !== options.length) {
                 answerStatus.textContent = "Please select all items in order.";
                 answerStatus.style.color = "red";
+                setCheckingState(false, "Check Answer");
                 return;
             }
 
@@ -307,20 +456,38 @@ checkAnswerButton.onclick = async () => {
         } else {
             answer = document.getElementById("textAnswer").value.trim();
             if (!answer) {
+                setCheckingState(false, "Check Answer");
+                syncCheckButtonState();
                 return;
             }
             userAnswerText = answer || "";
             correctAnswerText = currentQuestion.sampleAnswer || currentQuestion.correctAnswer || "";
         }
 
+        requestWasSent = true;
         const res = await apiRequest("/api/learn/check",
             "POST",
             {
                 question: currentQuestion.question,
                 answer,
-                type: currentQuestion.type
+                type: currentQuestion.type,
+                questionId: currentQuestionId
             }
         );
+
+        if (res?.alreadyChecked) {
+            if (res.questionCheckPending) {
+                return;
+            }
+
+            currentQuestionChecked = true;
+            answerStatus.textContent = res.message || "This question has already been checked.";
+            answerStatus.style.color = "#555";
+            checkAnswerButton.disabled = true;
+            setAnswerControlsDisabled(true);
+            nextQuestionButton.disabled = false;
+            return;
+        }
 
         const checkResult = res.data || res;
 
@@ -353,19 +520,39 @@ checkAnswerButton.onclick = async () => {
         answerStatus.style.color = isCorrect ? "green" : "red";
 
         resultPanel.classList.remove("hidden");
+
+        if (checkResult.lessonFinished) {
+            currentLesson = checkResult.nextLesson || currentLesson;
+            showLessonComplete(checkResult.nextLesson, checkResult.masteryGain);
+            nextQuestionButton.disabled = true;
+            if (currentType === "ordering") {
+                clearOrderButton.disabled = true;
+            }
+            currentQuestionChecked = true;
+            return;
+        }
+
+        currentQuestionChecked = true;
         nextQuestionButton.disabled = false;
         if (currentType === "ordering") {
             clearOrderButton.disabled = true;
         }
     } catch (err) {
+        if (requestWasSent) {
+            answerStatus.textContent = err?.message || "Failed to check answer.";
+            answerStatus.style.color = "red";
+            nextQuestionButton.disabled = false;
+            setCheckingState(false, "Check Answer");
+            return;
+        }
+
         answerStatus.textContent = err?.message || "Failed to check answer.";
         answerStatus.style.color = "red";
         nextQuestionButton.disabled = false;
+        setCheckingState(false, "Check Answer");
     } finally {
-        if (resultPanel.classList.contains("hidden")) {
-            syncCheckButtonState();
-        } else {
-            checkAnswerButton.disabled = true;
+        if (currentQuestionChecked) {
+            setCheckingState(true, "Check Answer");
         }
     }
 };
@@ -375,32 +562,14 @@ nextQuestionButton.onclick = () => {
     loadQuestion();
 };
 
-initForm.onsubmit = async (e) => {
-    e.preventDefault();
+startLearningButton.onclick = startLearning;
 
-    const language = languageInput.value;
-    const grade = Number(gradeInput.value);
-    const chapters = parseChapters(chaptersInput.value);
-
-    if (!language || Number.isNaN(grade)) {
-        initStatus.textContent = "Please enter a valid language and grade.";
-        return;
-    }
-
-    await apiRequest("/api/learn/init",
-        "POST", 
-        {
-            language,
-            grade,
-            completedChapters: chapters
-        }
-    );
-
-    initPanel.classList.add("hidden");
-    lessonPanel.classList.remove("hidden");
-
+startNextLessonButton.onclick = async () => {
+    hideLessonComplete();
     await loadQuestion();
 };
+
+loadLearnerSummary();
 
 // DOUBT PANEL
 openDoubtButton.onclick = () => {

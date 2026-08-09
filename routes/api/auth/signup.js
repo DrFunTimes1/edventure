@@ -9,9 +9,10 @@ const db = neon(process.env.DB_URL);
 router.use(express.json())
 
 router.post('/', async (req, res) => {
-    const { email, unhashedpw, fname, lname } = req.body;
+    const { email, unhashedpw, fname, lname, tmpGrade } = req.body;
+    const grade = Number(tmpGrade)
 
-    if (!email || !unhashedpw || !fname || !lname) {
+    if (!email || !unhashedpw || !fname || !lname || !grade) {
         return res.status(400).json({
             status: "400 BAD REQUEST",
             details: "missing fields"
@@ -23,9 +24,9 @@ router.post('/', async (req, res) => {
         const friendcode = await friendCode();
 
         const result = await db`
-            INSERT INTO users (fname, lname, email, password, friend_code)
-            VALUES (${fname}, ${lname}, ${email}, ${password}, ${friendcode})
-            RETURNING id, email, fname, lname, friend_code
+            INSERT INTO users (fname, lname, email, password, friend_code, grade)
+            VALUES (${fname}, ${lname}, ${email}, ${password}, ${friendcode}, ${grade})
+            RETURNING id, email, fname, lname, friend_code, grade
         `;
 
         console.log("INSERTED ROW:", result);

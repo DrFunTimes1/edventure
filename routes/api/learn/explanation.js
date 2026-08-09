@@ -4,6 +4,7 @@ export default function registerExplanationRoute(router, helpers) {
         genResponse,
         fixJson
     } = helpers;
+    const logPrefix = "[LEARN/EXPLANATION.JS]";
 
     router.post('/explanation', async (req, res) => {
         try {
@@ -26,9 +27,12 @@ export default function registerExplanationRoute(router, helpers) {
 
             const data = JSON.parse(cleanText);
 
+            console.log(`${logPrefix} Explanation generated.`);
+
             res.json(data);
 
         } catch (err) {
+            console.error(`${logPrefix} ${String(err)}`);
             res.status(500).json({ error: String(err) });
         }
     });

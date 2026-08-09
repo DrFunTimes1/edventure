@@ -10,18 +10,19 @@
 
 <!-- INIT SCREEN -->
 <div id="initPanel" class="panel">
-    <h2>Start Learning</h2>
+    <div class="welcome-card">
+        <p class="eyebrow">Welcome back</p>
+        <h2 id="welcomeName">Learner</h2>
+        <p id="welcomeTier" class="welcome-tier">Current Tier: C</p>
+        <p id="welcomeGrade" class="welcome-grade">Loading grade...</p>
+    </div>
 
-    <form id="initForm">
-        <input id="languageInput" placeholder="Language (e.g. Maths)" required />
+    <div class="focus-card">
+        <h3>Today's Focus</h3>
+        <ul id="focusList" class="focus-list"></ul>
+    </div>
 
-        <input id="gradeInput" type="number" min="1" max="12" placeholder="Grade (e.g. 6)" required />
-
-        <input id="chaptersInput" placeholder="Completed chapters (e.g. 1,2,3)" required />
-
-        <button type="submit">Start</button>
-    </form>
-
+    <button id="startLearningButton" type="button">Start Learning</button>
     <p id="initStatus"></p>
 </div>
 
@@ -50,6 +51,17 @@
 
     <button id="nextQuestionButton">Next Question</button>
     <button id="openDoubtButton" class="hidden">Need help? Ask a quick doubt</button>
+
+    <div id="lessonCompletePanel" class="result hidden lesson-complete">
+        <h3>Lesson Complete!</h3>
+        <p><b>Mastery Gain:</b> <span id="lessonMasteryGain">+0.00</span></p>
+        <p><b>Next Lesson:</b> <span id="nextLessonTitle">Waiting...</span></p>
+        <div>
+            <b>Concepts:</b>
+            <ul id="nextLessonConcepts" class="focus-list compact"></ul>
+        </div>
+        <button id="startNextLessonButton" type="button">Start Next Lesson</button>
+    </div>
 </div>
 
 <!-- DOUBT SIDEBAR -->
@@ -68,7 +80,7 @@
 
 
 <script src="js/api.js"></script>
-<script src="js/learn.js"></script>
 <script src="js/checkloggedin.js"></script>
+<script src="js/learn.js"></script>
 </body>
 </html>
