@@ -1,6 +1,9 @@
 async function login() {
     console.log(".../js/login.js loaded")
     try {
+        localStorage.clear();
+        sessionStorage.clear();
+
         const email = document.getElementById("loginEmail").value.trim();
         const password = document.getElementById("loginPass").value.trim();
 

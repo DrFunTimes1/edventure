@@ -9,7 +9,8 @@ const db = neon(process.env.DB_URL);
 router.use(express.json())
 
 router.post('/', async (req, res) => {
-    const { email, unhashedpw, fname, lname, tmpGrade } = req.body;
+    const { email, unhashedpw, fname, lname} = req.body;
+    const tmpGrade = req.body.grade;
     const grade = Number(tmpGrade)
 
     if (!email || !unhashedpw || !fname || !lname || !grade) {
@@ -56,7 +57,7 @@ async function friendCode(){
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     let result = '';
 
-    for (let i = 0; i <= 6; i++) {
+    for (let i = 0; i < 6; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;

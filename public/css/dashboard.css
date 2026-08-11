@@ -1,48 +1,356 @@
-.dashboard {
-    padding: 20px;
-    padding-bottom: 100px;
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+.dashboard-main {
+    min-height: calc(100vh - 70px);
+    padding: 28px 0;
 }
 
-header {
-    margin-bottom: 30px;
-}
-
-.cardGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
     gap: 20px;
 }
 
-.dashboardCard {
-    background: #1e293b;
-    padding: 20px;
-    border-radius: 20px;
+
+/* =========================================================
+   WELCOME
+========================================================= */
+
+.dashboard-welcome {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    align-items: center;
+
+    min-height: 90px;
+
+    padding: 22px 26px;
+
+    background: rgba(17, 24, 39, 0.94);
+
+    border: 1px solid rgba(255, 255, 255, 0.07);
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 12px 35px rgba(0, 0, 0, 0.18);
 }
 
-#prediagStartButton {
-    align-self: flex-start;
-    padding: 12px 22px;
-    border-radius: 12px;
-    background: #2563eb;
-    color: white;
+.dashboard-eyebrow {
+    color: #60a5fa;
+
+    font-size: 0.72rem;
+    font-weight: 700;
+
+    letter-spacing: 1.2px;
+
+    margin-bottom: 5px;
+}
+
+.dashboard-welcome h2 {
+    font-size: 1.7rem;
+    margin-bottom: 3px;
+}
+
+.dashboard-welcome p:last-child {
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+
+/* =========================================================
+   GENERAL CARD
+========================================================= */
+
+.dashboard-card {
+    background: rgba(17, 24, 39, 0.94);
+
+    border: 1px solid rgba(255, 255, 255, 0.07);
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 12px 35px rgba(0, 0, 0, 0.18);
+}
+
+
+/* =========================================================
+   PRE-DIAGNOSTIC
+========================================================= */
+
+.prediag-card {
+    display: flex;
+    align-items: center;
+
+    gap: 18px;
+
+    padding: 20px 24px;
+}
+
+.prediag-icon {
+    width: 50px;
+    height: 50px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+
+    background: rgba(59, 130, 246, 0.12);
+
+    color: #60a5fa;
+
+    font-size: 1.3rem;
+}
+
+.prediag-content {
+    flex: 1;
+}
+
+.prediag-content h3 {
+    font-size: 1rem;
+
+    margin-bottom: 4px;
+}
+
+.prediag-content p {
+    color: #94a3b8;
+
+    font-size: 0.85rem;
+}
+
+
+/* =========================================================
+   PROGRESS
+========================================================= */
+
+.progress-card {
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 18px 22px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.card-header h3 {
     font-size: 1rem;
 }
 
-.bottomNav {
-    position: fixed;
-    bottom: 0;
+.card-header i {
+    color: #60a5fa;
+
+    margin-right: 7px;
+}
+
+.progress-content {
+    display: grid;
+
+    grid-template-columns: minmax(0, 1fr) 130px 180px;
+
+    align-items: center;
+
+    gap: 28px;
+
+    padding: 24px;
+}
+
+
+/* =========================================================
+   XP
+========================================================= */
+
+.xp-section {
+    min-width: 0;
+}
+
+.progress-label-row {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 9px;
+
+    font-size: 0.85rem;
+}
+
+.progress-label-row span {
+    color: #cbd5e1;
+}
+
+.progress-label-row span i {
+    color: #fbbf24;
+
+    margin-right: 5px;
+}
+
+.progress-label-row strong {
+    color: #f8fafc;
+}
+
+.xp-bar {
     width: 100%;
-    display: flex;
-    justify-content: space-around;
-    padding: 15px;
+    height: 12px;
+
     background: #1e293b;
+
+    border-radius: 999px;
+
+    overflow: hidden;
 }
 
-.bottomNav button {
-    background: transparent;
-    color: white;
-    font-size: 1rem;
+.xp-fill {
+    height: 100%;
+
+    width: 0%;
+
+    background: linear-gradient(
+        90deg,
+        #2563eb,
+        #60a5fa
+    );
+
+    border-radius: inherit;
+
+    transition: width 0.5s ease;
+}
+
+.xp-percentage {
+    display: flex;
+
+    gap: 5px;
+
+    margin-top: 7px;
+
+    color: #64748b;
+
+    font-size: 0.75rem;
+}
+
+.xp-percentage span:first-child {
+    color: #60a5fa;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   LEVEL / STREAK
+========================================================= */
+
+.progress-stat {
+    padding-left: 22px;
+
+    border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.progress-stat-label {
+    display: block;
+
+    color: #64748b;
+
+    font-size: 0.75rem;
+
+    margin-bottom: 6px;
+}
+
+.progress-stat strong {
+    font-size: 1.5rem;
+
+    color: #60a5fa;
+}
+
+.streak-stat strong {
+    color: #fbbf24;
+}
+
+.streak-stat strong i {
+    margin-right: 4px;
+}
+
+
+/* =========================================================
+   HIDE DIAGNOSTIC
+========================================================= */
+
+.prediag-card.hidden {
+    display: none;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 800px) {
+
+    .dashboard-main {
+        padding: 20px 0;
+    }
+
+    .dashboard-container {
+        gap: 16px;
+    }
+
+    .dashboard-welcome {
+        padding: 20px;
+    }
+
+    .dashboard-welcome h2 {
+        font-size: 1.4rem;
+    }
+
+    .prediag-card {
+        flex-wrap: wrap;
+    }
+
+    .prediag-content {
+        min-width: 200px;
+    }
+
+    .prediag-card button {
+        width: 100%;
+    }
+
+    .progress-content {
+        grid-template-columns: 1fr 1fr;
+
+        gap: 20px;
+    }
+
+    .xp-section {
+        grid-column: 1 / -1;
+    }
+
+    .progress-stat {
+        padding-left: 0;
+
+        border-left: none;
+    }
+}
+
+
+@media (max-width: 500px) {
+
+    .prediag-card {
+        align-items: flex-start;
+    }
+
+    .prediag-icon {
+        width: 44px;
+        height: 44px;
+    }
+
+    .progress-content {
+        grid-template-columns: 1fr;
+    }
+
+    .xp-section {
+        grid-column: auto;
+    }
 }

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | EdVenture</title>
+    <link rel="stylesheet" href="/css/profile.css">
+</head>
+
+<body>
+
+    <header class="topbar">
+        <a href="/" class="logo">EdVenture</a>
+
+        <nav>
+            <a href="/">Home</a>
+            <a href="/learn.html">Learn</a>
+            <a href="/profile.html" class="active">Profile</a>
+        </nav>
+    </header>
+
+    <main class="profile-container">
+
+        <section class="profile-hero">
+
+            <div class="avatar" id="avatar">
+                ?
+            </div>
+
+            <div class="profile-heading">
+                <h1 id="userName">Loading...</h1>
+                <p id="userEmail">Loading...</p>
+            </div>
+
+            <div class="tier-badge" id="tierBadge">
+                --
+            </div>
+
+        </section>
+
+
+        <section class="stats-grid">
+
+            <div class="stat-card">
+                <span class="stat-label">Grade</span>
+                <strong id="grade">--</strong>
+            </div>
+
+            <div class="stat-card">
+                <span class="stat-label">Lessons Completed</span>
+                <strong id="lessonsDone">--</strong>
+            </div>
+
+            <div class="stat-card">
+                <span class="stat-label">Overall Mastery</span>
+                <strong id="mastery">--</strong>
+            </div>
+
+        </section>
+
+
+        <section class="profile-section">
+
+            <div class="section-header">
+                <h2>Account</h2>
+            </div>
+
+            <div class="info-list">
+
+                <div class="info-row">
+                    <span>Name</span>
+                    <strong id="fullName">--</strong>
+                </div>
+
+                <div class="info-row">
+                    <span>Email</span>
+                    <strong id="email">--</strong>
+                </div>
+
+                <div class="info-row">
+                    <span>Friend Code</span>
+                    <strong id="friendCode">--</strong>
+                </div>
+            </div>
+        </section>
+
+
+        <section class="profile-section">
+            <div class="section-header">
+                <h2>Learning</h2>
+            </div>
+
+            <div class="learning-card">
+                <div class="learning-main">
+                    <span class="learning-label">Current Tier</span>
+                    <strong id="learningTier">--</strong>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="masteryBar"></div>
+                    </div>
+
+                    <span id="masteryText">--</span>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <div class="error-message" id="errorMessage">
+            Failed to load profile.
+        </div>
+
+    </main>
+
+    <script src="/js/profile.js"></script>
+</body>
+</html>

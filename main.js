@@ -14,9 +14,7 @@ import signup from './routes/api/auth/signup.js';
 import getUser from './routes/api/auth/getUser.js';
 import getfriends from './routes/api/friends/getfriends.js';
 import addfriends from './routes/api/friends/add.js';
-import question from './routes/api/prediag/question.js';
 import learn from './routes/api/learn/learn.js';
-import backendworks from './routes/api/backendworks.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -138,9 +136,7 @@ app.use('/api/auth/signup', signup);
 app.use('/api/auth/getUser', getUser);
 app.use('/api/friends/getfriends', getfriends);
 app.use('/api/friends/add', addfriends);
-app.use('/api/prediag', question);
 app.use('/api/learn', learn);
-app.use('/api/backendworks', backendworks);
 
 app.listen(port, () => {
     console.log("Server is running on port " + port);

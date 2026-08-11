@@ -45,6 +45,8 @@ let currentQuestionId = null;
 let currentUser = null;
 let currentLesson = null;
 
+loadLearnerSummary();
+
 function setAnswerControlsDisabled(disabled) {
     optionsGrid.querySelectorAll("button, select, textarea, input").forEach((control) => {
         control.disabled = disabled;
@@ -568,8 +570,6 @@ startNextLessonButton.onclick = async () => {
     hideLessonComplete();
     await loadQuestion();
 };
-
-loadLearnerSummary();
 
 // DOUBT PANEL
 openDoubtButton.onclick = () => {

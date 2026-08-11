@@ -1,5 +1,8 @@
 async function signup() {
     try {
+        localStorage.clear();
+        sessionStorage.clear();
+
         const fname = document.getElementById("signupFName").value.trim();
         const lname = document.getElementById("signupLName").value.trim();
         const grade = document.getElementById("signupGrade").value.trim();

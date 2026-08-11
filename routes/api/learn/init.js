@@ -128,6 +128,7 @@ export default function registerInitRoute(router, helpers) {
                 loggedin: true,
                 grade: req.session.grade ?? null,
                 tier: calculateTier(req.session.mastery),
+                mastery: req.session.mastery ?? {},
                 lessonHistoryCount: req.session.lessonHistory.length,
                 currentLesson: req.session.currentLesson ?? null,
                 name: req.session.userName ?? null

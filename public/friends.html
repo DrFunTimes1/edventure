@@ -6,26 +6,33 @@
 
     <title>Friends - EdVenture</title>
 
+    <link rel="stylesheet" href="css/profile-style.css">
     <link rel="stylesheet" href="css/friends.css">
 </head>
 <body>
 
 <header class="friendsHeader">
-
     <h1>Friends</h1>
 
+    <nav class="nav">
+        <a href="dashboard.html">Home</a>
+        <a href="learn.html">Learn</a>
+        <a href="friends.html" class="active">Friends</a>
+        <a href="profile.html">Profile</a>
+    </nav>
+    
     <div class="myFriendCodeBox">
         Your Code:
         <span id="myFriendCode">Loading...</span>
     </div>
-
+    
 </header>
 
 <main class="friendsMain">
     <section class="addFriendSection">
         <input
-            type="text"
-            id="friendCodeInput"
+        type="text"
+        id="friendCodeInput"
             placeholder="Enter Friend Code"
         >
 
@@ -44,12 +51,6 @@
 
 </main>
 
-<nav class="bottomNav">
-    <a href="dashboard.html">Home</a>
-    <a href="learn.html">Learn</a>
-    <a href="friends.html" class="active">Friends</a>
-    <a href="profile.html">Profile</a>
-</nav>
 
 <script src="js/api.js"></script>
 <script src="js/friends.js"></script>

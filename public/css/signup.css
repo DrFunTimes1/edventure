@@ -1,35 +1,63 @@
-.authContainer {
-    min-height: 100vh;
+/* =========================================================
+   SIGNUP
+   ========================================================= */
+
+.form-row-custom > div {
     display: flex;
-    justify-content: center;
+
+    gap: 12px;
+}
+
+.form-row-custom > div > input {
+    flex: 1;
+}
+
+.terms-row {
+    display: flex;
+
     align-items: center;
+
+    gap: 8px;
+
+    margin: 15px 0;
 }
 
-.authCard {
-    width: 400px;
-    background: #1e293b;
-    padding: 40px;
-    border-radius: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+.terms-row input {
+    width: 17px;
+    height: 17px;
+
+    accent-color: #3b82f6;
 }
 
-.authCard input {
-    padding: 14px;
-    border-radius: 10px;
-    border: none;
-    background: #334155;
-    color: white;
+.terms-row label {
+    color: #94a3b8;
+
+    font-size: 0.82rem;
 }
 
-.authCard button {
-    padding: 14px;
-    border-radius: 10px;
-    background: #2563eb;
-    color: white;
+.password-strength {
+    margin-top: 6px;
+
+    font-size: 0.75rem;
 }
 
-.secondaryButton {
-    background: #334155 !important;
+.strength-weak {
+    color: #ef4444;
+}
+
+.strength-medium {
+    color: #f59e0b;
+}
+
+.strength-strong {
+    color: #22c55e;
+}
+
+@media (max-width: 500px) {
+
+    .form-row-custom > div {
+        flex-direction: column;
+
+        gap: 0;
+    }
 }
