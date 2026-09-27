@@ -53,7 +53,7 @@ export default function registerInitRoute(router, helpers) {
                     error: "Grade not found"
                 });
             }
-            
+
             if (Number.isNaN(grade)) {
                 console.error(`${logPrefix} Invalid grade`);
                 return res.status(400).json({
@@ -69,14 +69,14 @@ export default function registerInitRoute(router, helpers) {
             req.session.subject = subject || "maths";
 
             console.log(`${logPrefix} Subject: ${req.session.subject}`);
-            
+
             await loadStoredMastery(req);
-            
+
             req.session.lessonHistory = await loadLessonHistory(req);
             req.session.tier = calculateTier(req.session.mastery);
-            
+
             const currentLesson =
-                req.session.currentLesson ??
+                req.session.nextLesson ??
                 await buildNextLesson(
                     {
                         mastery: req.session.mastery,
@@ -87,16 +87,23 @@ export default function registerInitRoute(router, helpers) {
                 );
 
             req.session.currentLesson = currentLesson;
-                console.log(`${logPrefix} Current lesson: ${JSON.stringify({
-                    subject: currentLesson?.subject ?? null,
-                    chapter: currentLesson?.chapter ?? null,
-                    chapterKey: currentLesson?.chapterKey ?? null,
-                    concepts: currentLesson?.concepts ?? [],
-                    lessonType: currentLesson?.lessonType ?? null,
-                    targetMastery: currentLesson?.targetMastery ?? null,
-                    maxQuestions: currentLesson?.maxQuestions ?? null
-                })}`);
-            
+            delete req.session.nextLesson;
+            req.session.currentChapter = currentLesson.chapterKey ?? null;
+            req.session.lessonProgress = {
+                questionsAsked: 0,
+                masteryStart: structuredClone(req.session.mastery || {}),
+                masteryGain: 0
+            };
+            console.log(`${logPrefix} Current lesson: ${JSON.stringify({
+                subject: currentLesson?.subject ?? null,
+                chapter: currentLesson?.chapter ?? null,
+                chapterKey: currentLesson?.chapterKey ?? null,
+                concepts: currentLesson?.concepts ?? [],
+                lessonType: currentLesson?.lessonType ?? null,
+                targetMastery: currentLesson?.targetMastery ?? {},
+                maxQuestions: currentLesson?.maxQuestions ?? null
+            })}`);
+
             res.json({
                 status: "ok",
                 grade,
@@ -120,7 +127,7 @@ export default function registerInitRoute(router, helpers) {
             }
 
             if (!req.session.grade) req.session.grade = await loadStudentGrade(req);
-            
+
             await loadStoredMastery(req);
             req.session.lessonHistory ??= [];
 

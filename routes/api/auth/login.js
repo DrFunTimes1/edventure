@@ -9,6 +9,8 @@ const db = neon(process.env.DB_URL);
 
 router.use(express.json())
 
+const logPrefix = "[AUTH/LOGIN.JS]";
+
 router.post('/', async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -30,14 +32,26 @@ router.post('/', async (req, res) => {
                 error: "invalid credentials"
             })
         }
-        req.session.userId = user.id; 
-        res.status(200).json({
+
+        // regenerate session
+        req.session.regenerate((err) => {
+            //fail
+            if (err){
+                console.error(logPrefix, "Failed to regenerate a new session! ", err);
+                return res.status(500).json({ error: "failed to regenerate session" });
+            }
+
+            //success
+            req.session.userId = user.id;
+
+            return res.status(200).json({
                 userId: user.id,
                 name: user.fname
             });
-    } catch(err){
-        console.log(err);
-        res.status(500).json({
+        });
+    } catch(err) {
+        console.error(logPrefix, err);
+        return res.status(500).json({
             status: "500 internal server error"
         });
     }

@@ -90,10 +90,10 @@ export function createLearnHelpers({ ai, groq, db }) {
     }
 
     async function buildNextLesson({
-            mastery,
-            grade,
-            subject
-        },
+        mastery,
+        grade,
+        subject
+    },
         req
     ) {
         console.log(`${logPrefix} Building next lesson`, {
@@ -129,7 +129,7 @@ export function createLearnHelpers({ ai, groq, db }) {
         const chapterData =
             await loadChapter(
                 grade,
-                    chosenSubject,
+                chosenSubject,
                 chapter.chapterKey
             );
 
@@ -319,13 +319,39 @@ export function createLearnHelpers({ ai, groq, db }) {
             - Sometimes include stronger concepts for confidence.
             - Follow natural prerequisite order.
 
+            CONCEPT RULES (MANDATORY):
+
+            - The concepts you return MUST be concepts that exist in the provided Concept data.
+            - Return the EXACT same concept names as they appear in the Concept data.
+            - Do NOT rename, reword, capitalize differently, shorten, expand, or otherwise modify concept names.
+            - Do NOT invent new concepts.
+            - Do NOT create concepts that are overly specific or describe a narrow subtype of a concept.
+            - Prefer broad, reusable concepts over excessively specific concepts.
+            - For example, use "angles" rather than "acute angles" when the broader concept "angles" exists.
+            - The selected concepts should represent meaningful areas of understanding that can be assessed across multiple questions.
+
+            TARGET MASTERY RULES (MANDATORY):
+
+            - Provide a separate target mastery value for EVERY selected concept.
+            - The keys in targetMastery MUST be the EXACT SAME concept names used in the concepts array.
+            - Each target mastery value must be a number between 0 and 1.
+            - A weaker concept may receive a higher target than a stronger concept.
+            - Do not omit any selected concept from targetMastery.
+            - Do not add any concept to targetMastery that is not in concepts.
+
             Return ONLY JSON:
 
             {
-                "concepts":[],
-                "lessonType":"practice",
-                "targetMastery":0.8,
-                "maxQuestions":10
+                "concepts": [
+                    "exact concept name",
+                    "exact concept name"
+                ],
+                "lessonType": "practice",
+                "targetMastery": {
+                    "exact concept name": 0.8,
+                    "exact concept name": 0.75
+                },
+                "maxQuestions": 10
             }
         `;
 
@@ -337,9 +363,9 @@ export function createLearnHelpers({ ai, groq, db }) {
         console.log(`${logPrefix} Target mastery: ${Number(result?.targetMastery ?? 0.8)}`);
 
         return {
-            concepts: normalizeConceptList(result?.concepts).map(toTitleCase),
+            concepts: normalizeConceptList(result?.concepts),
             lessonType: result?.lessonType || "practice",
-            targetMastery: Number(result?.targetMastery ?? 0.8),
+            targetMastery: result?.targetMastery ?? {},
             maxQuestions: Number(result?.maxQuestions ?? 10),
         };
     }
@@ -551,7 +577,11 @@ export function createLearnHelpers({ ai, groq, db }) {
             try {
                 return await genQuestionGroq(prompt, 1, "qwen/qwen3-32b");
             } catch {
-                return await genQuestionGroq(prompt, 1, "llama-3.3-70b-versatile");
+                try {
+                    return await genQuestionGroq(prompt, 1, "qwen/qwen3.8-27b");
+                } catch {
+                    return await genQuestionGroq(prompt, 1, "qwen/qwen3.6-27b");
+                }
             }
         }
     }
@@ -584,30 +614,57 @@ export function createLearnHelpers({ ai, groq, db }) {
     }
 
     function normalizeObjectiveAnswer(value, type) {
-        const parsed = safeParseJson(value);
+        if (type === "matching" || type === "ordering") {
+            const parsed = safeParseJson(value);
 
-        if (type === "matching") {
-            const pairs = Array.isArray(parsed) ? parsed : [];
+            if (type === "matching") {
+                const pairs = Array.isArray(parsed) ? parsed : [];
 
-            return pairs
-                .map((pair) => [
-                    String(pair?.[0] ?? "").trim(),
-                    String(pair?.[1] ?? "").trim()
-                ])
-                .sort((left, right) => {
-                    const leftKey = `${left[0]}\u0000${left[1]}`;
-                    const rightKey = `${right[0]}\u0000${right[1]}`;
+                return pairs
+                    .map((pair) => [
+                        String(pair?.[0] ?? "").trim(),
+                        String(pair?.[1] ?? "").trim()
+                    ])
+                    .sort((left, right) => {
+                        const leftKey = `${left[0]}\u0000${left[1]}`;
+                        const rightKey = `${right[0]}\u0000${right[1]}`;
 
-                    return leftKey.localeCompare(rightKey);
-                });
-        }
+                        return leftKey.localeCompare(rightKey);
+                    });
+            }
 
-        if (type === "ordering") {
             const items = Array.isArray(parsed) ? parsed : [];
             return items.map((item) => String(item).trim());
         }
 
-        return String(parsed ?? "").trim();
+        // MCQ / truefalse
+        return String(value ?? "").trim();
+    } function normalizeObjectiveAnswer(value, type) {
+        if (type === "matching" || type === "ordering") {
+            const parsed = safeParseJson(value);
+
+            if (type === "matching") {
+                const pairs = Array.isArray(parsed) ? parsed : [];
+
+                return pairs
+                    .map((pair) => [
+                        String(pair?.[0] ?? "").trim(),
+                        String(pair?.[1] ?? "").trim()
+                    ])
+                    .sort((left, right) => {
+                        const leftKey = `${left[0]}\u0000${left[1]}`;
+                        const rightKey = `${right[0]}\u0000${right[1]}`;
+
+                        return leftKey.localeCompare(rightKey);
+                    });
+            }
+
+            const items = Array.isArray(parsed) ? parsed : [];
+            return items.map((item) => String(item).trim());
+        }
+
+        // MCQ / truefalse
+        return String(value ?? "").trim();
     }
 
     function compareObjectiveAnswer(answer, correctAnswer, type) {
@@ -682,7 +739,7 @@ export function createLearnHelpers({ ai, groq, db }) {
             WHERE id=${req.session.userId}
             `;
         if (!rows.length) return null;
-        
+
         let grade = rows[0].grade;
 
         if (rows[0].academic_year < year) {

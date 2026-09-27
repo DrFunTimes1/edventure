@@ -172,6 +172,25 @@ export default function registerQuestionRoute(router, helpers) {
                 DO NOT change the current tier.
 
                 ==================================================
+                QUESTION CLARITY AND DIFFICULTY
+                ==================================================
+
+                Difficulty must come from mathematical or educational reasoning, application, and conceptual depth, not from confusing wording.
+
+                Every question must:
+
+                - be clear on the first read;
+                - use natural language appropriate for the student's grade;
+                - ask one main thing at a time unless multiple steps are genuinely necessary;
+                - include only relevant information;
+                - avoid unnecessarily complicated sentence structures;
+                - avoid unnecessary jargon and trick wording unless the lesson specifically teaches that misconception.
+
+                Do not make a question difficult merely by making it verbose or by forcing the student to decode an elaborate scenario. Prefer a sequence, equation, or small concrete example directly in the question when it can test the same concept. Increase difficulty through reasoning, application, or conceptual depth instead.
+
+                Before returning the question, silently ask: "Could a student understand exactly what I am asking on the first read?" If not, rewrite it to be clearer.
+
+                ==================================================
                 STRICT SYLLABUS RESTRICTION
                 ==================================================
 
@@ -239,6 +258,10 @@ export default function registerQuestionRoute(router, helpers) {
 
                 ${JSON.stringify(req.session.mastery, null, 2)}
 
+                Target mastery for this lesson:
+
+                ${JSON.stringify(activeLesson?.targetMastery || {}, null, 2)}
+
                 Mastery scale:
 
                 0.0 = not understood
@@ -249,13 +272,14 @@ export default function registerQuestionRoute(router, helpers) {
 
                 Question-selection priorities:
 
-                1. Prefer concepts with low mastery.
-                2. Give additional practice to concepts below 0.2.
-                3. Avoid repeatedly testing concepts that are already strong.
-                4. Occasionally review mastered concepts.
-                5. Use mastery together with the current tier.
-                6. If mastery information is missing, distribute practice naturally.
-                7. The question must directly test one or more lesson concepts.
+                1. First identify which selected concepts are below their individual target mastery and which have already reached their target.
+                2. Concepts below their target are the primary focus. Most questions MUST come from these unmet concepts.
+                3. If several concepts are below target, divide the majority of practice among those unmet concepts according to their need. Do NOT distribute questions evenly across all selected concepts.
+                4. Concepts that have reached their target are secondary reinforcement only. Include at most 1-2 questions from mastered concepts during a normal lesson.
+                5. Do NOT give a mastered concept the same number of questions as an unmet concept, let it take priority over an unmet concept, or alternate mastered and unmet concepts constantly.
+                6. If only one concept is below target, keep almost the entire lesson focused on it and use at most 1-2 mastered-concept questions as occasional confidence boosters, preferably between questions focused on weaker concepts.
+                7. After an occasional mastered-concept question, return to the unmet concepts. Mastered concepts must not interrupt or replace substantial practice on concepts that still need improvement.
+                8. Use mastery together with the current tier, and ensure every question directly tests one or more lesson concepts.
 
                 ==================================================
                 PREVIOUS QUESTIONS
@@ -593,7 +617,8 @@ export default function registerQuestionRoute(router, helpers) {
                 9. If type = shortqa/longqa, are the required fields present?
                 10. Does the question require no visual aid?
                 11. Is the concept array valid?
-                12. Is the output valid JSON?
+                12. Is the question clear on the first read and free of unnecessary wording, jargon, and irrelevant information?
+                13. Is the output valid JSON?
 
                 ==================================================
                 SYLLABUS

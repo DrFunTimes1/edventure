@@ -8,6 +8,8 @@ const db = neon(process.env.DB_URL);
 
 router.use(express.json())
 
+const logPrefix = "[AUTH/SIGNUP.JS]";
+
 router.post('/', async (req, res) => {
     const { email, unhashedpw, fname, lname} = req.body;
     const tmpGrade = req.body.grade;
@@ -30,7 +32,7 @@ router.post('/', async (req, res) => {
             RETURNING id, email, fname, lname, friend_code, grade
         `;
 
-        console.log("INSERTED ROW:", result);
+        console.log(logPrefix, "INSERTED ROW:", result);
         
         return res.status(201).json({
             status: "201 CREATED"

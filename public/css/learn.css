@@ -87,8 +87,7 @@ body {
 }
 
 #startLearningButton,
-#nextQuestionButton,
-#startNextLessonButton {
+#nextQuestionButton {
     width: 100%;
 
     padding: 14px;
@@ -115,8 +114,7 @@ body {
 }
 
 #startLearningButton:hover,
-#nextQuestionButton:hover,
-#startNextLessonButton:hover {
+#nextQuestionButton:hover {
     transform: translateY(-2px);
 }
 
@@ -243,13 +241,50 @@ body {
 }
 
 .lesson-complete {
+    position: relative;
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
     text-align: center;
 }
 
 .lesson-complete h3 {
+    position: relative;
+    z-index: 2;
     color: #60a5fa;
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    text-transform: uppercase;
+}
 
-    margin-bottom: 15px;
+.lesson-finished > :not(#lessonCompletePanel) {
+    display: none;
+}
+
+#confetti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+#confetti span {
+    position: absolute;
+    top: -12%;
+    left: var(--x);
+    width: 10px;
+    height: 18px;
+    background: hsl(var(--hue), 90%, 60%);
+    animation: confetti-fall var(--duration) linear var(--delay) infinite;
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(-10vh) rotate(0deg);
+    }
+    100% {
+        transform: translateY(120vh) rotate(var(--rotation));
+    }
 }
 
 .overlay {

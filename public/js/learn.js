@@ -8,6 +8,7 @@ const startLearningButton = document.getElementById("startLearningButton");
 
 const lessonPanel = document.getElementById("lessonPanel");
 const lessonCompletePanel = document.getElementById("lessonCompletePanel");
+const confetti = document.getElementById("confetti");
 const questionText = document.getElementById("questionText");
 const optionsGrid = document.getElementById("optionsGrid");
 const checkAnswerButton = document.getElementById("checkAnswerButton");
@@ -20,10 +21,6 @@ const correctAnswerEl = document.getElementById("correctAnswer");
 const explanationEl = document.getElementById("explanation");
 
 const nextQuestionButton = document.getElementById("nextQuestionButton");
-const lessonMasteryGain = document.getElementById("lessonMasteryGain");
-const nextLessonTitle = document.getElementById("nextLessonTitle");
-const nextLessonConcepts = document.getElementById("nextLessonConcepts");
-const startNextLessonButton = document.getElementById("startNextLessonButton");
 
 const openDoubtButton = document.getElementById("openDoubtButton");
 const doubtPanel = document.getElementById("doubtPanel");
@@ -99,27 +96,34 @@ function updateWelcomeSummary(status) {
 }
 
 function showLessonComplete(nextLesson, masteryGain) {
-    lessonCompletePanel.classList.remove("hidden");
-    lessonMasteryGain.textContent = `+${Number(masteryGain ?? 0).toFixed(2)}`;
-    nextLessonTitle.textContent = nextLesson?.chapter || "Next lesson ready";
+    lessonPanel.classList.add("lesson-finished");
+    setCheckingState(true, "Check Answer");
+    nextQuestionButton.disabled = true;
+    clearOrderButton.disabled = true;
+    openDoubtButton.classList.add("hidden");
+    confetti.innerHTML = "";
 
-    nextLessonConcepts.innerHTML = "";
-    const concepts = Array.isArray(nextLesson?.concepts) ? nextLesson.concepts : [];
-
-    if (concepts.length === 0) {
-        const item = document.createElement("li");
-        item.textContent = "A fresh lesson plan will be generated when you continue.";
-        nextLessonConcepts.appendChild(item);
-    } else {
-        concepts.forEach((concept) => {
-            const item = document.createElement("li");
-            item.textContent = concept;
-            nextLessonConcepts.appendChild(item);
-        });
+    for (let index = 0; index < 80; index++) {
+        const piece = document.createElement("span");
+        piece.style.setProperty("--x", `${Math.random() * 100}%`);
+        piece.style.setProperty("--hue", `${Math.random() * 360}`);
+        piece.style.setProperty("--delay", `${Math.random() * 1.5}s`);
+        piece.style.setProperty("--duration", `${2 + Math.random() * 2}s`);
+        piece.style.setProperty("--rotation", `${Math.random() * 360}deg`);
+        confetti.appendChild(piece);
     }
+
+    lessonCompletePanel.classList.remove("hidden");
+    window.setTimeout(() => {
+        hideLessonComplete();
+        lessonPanel.classList.add("hidden");
+        initPanel.classList.remove("hidden");
+        loadLearnerSummary();
+    }, 2500);
 }
 
 function hideLessonComplete() {
+    lessonPanel.classList.remove("lesson-finished");
     lessonCompletePanel.classList.add("hidden");
 }
 
@@ -350,15 +354,17 @@ async function loadQuestion() {
 async function loadLearnerSummary() {
     try {
         await checkLoggedIn();
-        const [userResult, learnStatus] = await Promise.all([
-            apiRequest("/api/auth/getUser"),
-            apiRequest("/api/learn/status")
-        ]);
+        const userResult = await apiRequest("/api/auth/getUser");
+        const learnStatus = await apiRequest("/api/learn/status");
+        const nextResult = await apiRequest("/api/learn/next");
 
         currentUser = userResult.user || null;
-        currentLesson = learnStatus.currentLesson || null;
+        currentLesson = nextResult.lesson || null;
 
-        updateWelcomeSummary(learnStatus);
+        updateWelcomeSummary({
+            ...learnStatus,
+            currentLesson: nextResult.lesson || null
+        });
         initStatus.textContent = "";
     } catch (err) {
         initStatus.textContent = err?.message || "Ready to start learning.";
@@ -524,12 +530,7 @@ checkAnswerButton.onclick = async () => {
         resultPanel.classList.remove("hidden");
 
         if (checkResult.lessonFinished) {
-            currentLesson = checkResult.nextLesson || currentLesson;
-            showLessonComplete(checkResult.nextLesson, checkResult.masteryGain);
-            nextQuestionButton.disabled = true;
-            if (currentType === "ordering") {
-                clearOrderButton.disabled = true;
-            }
+            showLessonComplete();
             currentQuestionChecked = true;
             return;
         }
@@ -566,11 +567,6 @@ nextQuestionButton.onclick = () => {
 
 startLearningButton.onclick = startLearning;
 
-startNextLessonButton.onclick = async () => {
-    hideLessonComplete();
-    await loadQuestion();
-};
-
 // DOUBT PANEL
 openDoubtButton.onclick = () => {
     doubtPanel.classList.add("open");
@@ -602,3 +598,51 @@ doubtForm.onsubmit = async (e) => {
 
     doubtMessages.innerHTML += `<div>AI: ${res.answer}</div>`;
 };
+
+// Development-only browser debug tools for testing the lesson UI.
+function showDebugState() {
+    const state = {
+        currentQuestion: currentQuestion?.question || null,
+        currentQuestionId,
+        currentType: currentType || null,
+        currentQuestionChecked,
+        lessonFinished: lessonPanel.classList.contains("lesson-finished"),
+        currentLesson: currentLesson || null,
+        isLoading,
+        isCheckingAnswer
+    };
+
+    console.table(state);
+    return state;
+}
+
+function showDebugHelp() {
+    console.log(`EdVenture debug tools:
+
+end_lesson()       -> Test the lesson-completion screen
+show_completion()  -> Show the lesson-completion screen
+reload_question()  -> Reload the current question
+show_state()       -> Print current frontend lesson state
+help()             -> Show this list`);
+}
+
+window.EdVentureDebug = {
+    end_lesson: showLessonComplete,
+    show_completion: showLessonComplete,
+    reload_question: () => {
+        if (typeof loadQuestion !== "function") {
+            console.warn("EdVenture: question loading is not available.");
+            return null;
+        }
+
+        return loadQuestion();
+    },
+    show_state: showDebugState,
+    help: showDebugHelp
+};
+
+window.end_lesson = window.EdVentureDebug.end_lesson;
+window.show_completion = window.EdVentureDebug.show_completion;
+window.reload_question = window.EdVentureDebug.reload_question;
+window.show_state = window.EdVentureDebug.show_state;
+window.help = window.EdVentureDebug.help;

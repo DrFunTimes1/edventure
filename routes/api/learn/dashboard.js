@@ -15,7 +15,7 @@ export default function registerDashboardRoute(router, helpers){
                 );
             req.session.lessonHistory ??= [];
 
-            const lesson = await buildNextLesson({
+            const lesson = req.session.nextLesson || await buildNextLesson({
                 mastery:req.session.mastery,
                 lessonHistory:
                     req.session.lessonHistory,
@@ -24,17 +24,12 @@ export default function registerDashboardRoute(router, helpers){
                 subject:
                     req.session.subject || "maths",
                 currentLesson:null
-            });
+            },
+            req
+            );
 
             console.log(`${logPrefix} Next lesson prepared.`);
-            req.session.currentLesson = lesson;
-            req.session.currentChapter = lesson.chapterKey;
-            req.session.lessonProgress = {
-                questionsAsked:0,
-                masteryStart:
-                    structuredClone(req.session.mastery),
-                masteryGain:0
-            };
+            req.session.nextLesson = lesson;
             res.json({
                 lesson,
                 lessonsDone:
