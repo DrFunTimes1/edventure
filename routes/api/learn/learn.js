@@ -17,7 +17,7 @@ const groq = new Groq({
 
 const db = neon(process.env.DB_URL);
 
-const helpers = createLearnHelpers({ ai, groq, db });
+export const helpers = createLearnHelpers({ ai, groq, db });
 const router = express.Router();
 
 router.use(express.json());

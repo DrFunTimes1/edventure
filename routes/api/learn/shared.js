@@ -703,7 +703,7 @@ export function createLearnHelpers({ ai, groq, db }) {
                 ${lesson?.chapter ?? null},
                 ${lesson?.chapterKey ?? null},
                 ${JSON.stringify(lesson?.concepts ?? [])}::jsonb,
-                ${lesson?.accuracy ?? null},
+                ${progress.accuracy ?? null},
                 ${progress.masteryGain ?? 0},
                 ${progress.questionsAsked ?? 0},
                 ${lesson?.lessonType ?? null}

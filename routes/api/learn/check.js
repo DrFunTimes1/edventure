@@ -40,6 +40,46 @@ export default function registerCheckRoute(router, helpers) {
         return roundNumber(Math.max(-MAX_MASTERY_LOSS, Math.min(MAX_MASTERY_GAIN, limitedDelta)), 4) ?? 0;
     }
 
+    router.post('/debug/end-update-lesson', async (req, res) => {
+        try {
+            if (!req.session.userId) {
+                return res.status(401).json({ status: "401 UNAUTHORIZED" });
+            }
+
+            if (!req.session.currentLesson) {
+                return res.status(400).json({ error: "No active lesson" });
+            }
+
+            req.session.lessonProgress ??= {
+                questionsAsked: 0,
+                masteryStart: structuredClone(req.session.mastery || {}),
+                masteryGain: 0
+            };
+            if (
+                Number.isFinite(req.session.accuracies) &&
+                req.session.lessonProgress.questionsAsked > 0
+            ) {
+                req.session.lessonProgress.accuracy =
+                    (req.session.accuracies / req.session.lessonProgress.questionsAsked) * 100;
+            }
+            req.session.lessonFinished = true;
+
+            await saveLessonHistory(
+                req,
+                req.session.currentLesson,
+                req.session.lessonProgress
+            );
+
+            return res.status(200).json({
+                status: "200 OK",
+                lessonFinished: true
+            });
+        } catch (err) {
+            console.error(`${logPrefix} Debug lesson update failed: ${String(err)}`);
+            return res.status(500).json({ status: "500 INTERNAL SERVER ERROR" });
+        }
+    });
+
     router.post('/check', async (req, res) => {
         try {
             req.session.lessonFinished = false;

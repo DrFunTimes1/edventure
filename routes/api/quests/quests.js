@@ -1,10 +1,20 @@
 export default function registerQuestsRoute(router, helpers) {
     const {
         genResponse,
-        fixJson,
-        questProgress
+        safeParseJson,
+        questProgress,
+        validateQuest
     } = helpers;
     const logPrefix = "[QUESTS/QUESTS.JS]";
+
+    router.post('/reset', (req, res) => {
+        req.session.questsGenerated = false;
+        req.session.result = null;
+        req.session.rawResult = null;
+        req.session.progress = null;
+
+        return res.status(204).end();
+    });
 
     router.post('/get', async (req, res) => {
         const QUEST_TYPES = {
@@ -75,7 +85,12 @@ export default function registerQuestsRoute(router, helpers) {
             `;
 
             req.session.rawResult = await genResponse(prompt);
-            req.session.result = fixJson(req.session.rawResult);
+            req.session.result = safeParseJson(
+                req.session.rawResult
+                    .replace(/```json/g, "")
+                    .replace(/```/g, "")
+                    .trim()
+            );
             console.log(logPrefix, req.session.result);
 
             if (!Array.isArray(req.session.result) || req.session.result.length !== 3 || !req.session.result.every(quest => validateQuest(quest, QUEST_TYPES))) {

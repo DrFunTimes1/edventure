@@ -10,6 +10,7 @@ router.post('/api/session/open', (req, res) => {
 
     if (req.session.questsGeneratedDate !== today) {
         req.session.questsGenerated = false;
+        req.session.questsGeneratedDate = today;
     }
 
     res.status(204).end();

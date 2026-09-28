@@ -620,14 +620,27 @@ function showDebugHelp() {
     console.log(`EdVenture debug tools:
 
 end_lesson()       -> Test the lesson-completion screen
+end_update_lesson()-> Save the current lesson to lesson history, then show completion
 show_completion()  -> Show the lesson-completion screen
 reload_question()  -> Reload the current question
 show_state()       -> Print current frontend lesson state
 help()             -> Show this list`);
 }
 
+async function endUpdateLesson() {
+    try {
+        await apiRequest("/api/learn/debug/end-update-lesson", "POST", {});
+        showLessonComplete();
+        return true;
+    } catch (error) {
+        console.error("EdVenture: could not update lesson history.", error);
+        return false;
+    }
+}
+
 window.EdVentureDebug = {
     end_lesson: showLessonComplete,
+    end_update_lesson: endUpdateLesson,
     show_completion: showLessonComplete,
     reload_question: () => {
         if (typeof loadQuestion !== "function") {
@@ -642,6 +655,7 @@ window.EdVentureDebug = {
 };
 
 window.end_lesson = window.EdVentureDebug.end_lesson;
+window.end_update_lesson = window.EdVentureDebug.end_update_lesson;
 window.show_completion = window.EdVentureDebug.show_completion;
 window.reload_question = window.EdVentureDebug.reload_question;
 window.show_state = window.EdVentureDebug.show_state;

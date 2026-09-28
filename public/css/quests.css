@@ -1,0 +1,213 @@
+body {
+    min-height: 100vh;
+}
+
+.quests-main {
+    padding: 34px 0 70px;
+}
+
+.quests-container {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.quests-heading {
+    padding: 24px 26px;
+    background: rgba(17, 24, 39, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 18px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18);
+}
+
+.quests-eyebrow {
+    color: #60a5fa;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    margin-bottom: 5px;
+}
+
+.quests-heading h1 {
+    font-size: 1.9rem;
+    margin-bottom: 3px;
+}
+
+.quests-heading p:last-child {
+    color: #94a3b8;
+}
+
+.quests-status {
+    color: #94a3b8;
+    min-height: 24px;
+}
+
+.quests-status.error {
+    color: #fca5a5;
+}
+
+.quests-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.quest-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 245px;
+    padding: 22px;
+    background: rgba(17, 24, 39, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 18px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18);
+    transition: 0.2s ease;
+}
+
+.quest-card:hover {
+    border-color: rgba(96, 165, 250, 0.35);
+    transform: translateY(-2px);
+}
+
+.quest-card.completed {
+    border-color: rgba(34, 197, 94, 0.5);
+    box-shadow: 0 12px 35px rgba(34, 197, 94, 0.1);
+}
+
+.quest-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.quest-number {
+    color: #60a5fa;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.quest-check {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    color: #64748b;
+}
+
+.quest-card.completed .quest-check {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: #062e16;
+}
+
+.quest-content {
+    color: #f8fafc;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.quest-requirements {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: auto;
+}
+
+.quest-missing-progress {
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.quest-requirement {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.quest-requirement-label {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: #cbd5e1;
+    font-size: 0.85rem;
+}
+
+.quest-requirement-label strong {
+    color: #f8fafc;
+    white-space: nowrap;
+}
+
+.quest-progress-track {
+    width: 100%;
+    height: 9px;
+    overflow: hidden;
+    background: #1e293b;
+    border-radius: 999px;
+}
+
+.quest-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #2563eb, #60a5fa);
+    border-radius: inherit;
+    transition: width 0.5s ease;
+}
+
+.quest-card.completed .quest-progress-fill {
+    background: linear-gradient(90deg, #16a34a, #4ade80);
+}
+
+.quest-confetti {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.quest-confetti span {
+    position: absolute;
+    top: -12%;
+    left: var(--x);
+    width: 9px;
+    height: 16px;
+    background: hsl(var(--hue), 90%, 60%);
+    animation: quest-confetti-fall var(--duration) linear var(--delay) forwards;
+}
+
+@keyframes quest-confetti-fall {
+    0% {
+        transform: translateY(-10vh) rotate(0deg);
+    }
+    100% {
+        transform: translateY(120vh) rotate(var(--rotation));
+    }
+}
+
+@media (max-width: 900px) {
+    .quests-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .quests-main {
+        padding-top: 18px;
+    }
+
+    .quests-container {
+        width: min(100% - 24px, 500px);
+    }
+
+    .quests-heading {
+        padding: 20px;
+    }
+}

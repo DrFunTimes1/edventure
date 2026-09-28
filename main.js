@@ -14,7 +14,8 @@ import signup from './routes/api/auth/signup.js';
 import getUser from './routes/api/auth/getUser.js';
 import getfriends from './routes/api/friends/getfriends.js';
 import addfriends from './routes/api/friends/add.js';
-import learn from './routes/api/learn/learn.js';
+import learn, { helpers as learnHelpers } from './routes/api/learn/learn.js';
+import registerQuestsRoute from './routes/api/quests/quests.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -137,6 +138,10 @@ app.use('/api/auth/getUser', getUser);
 app.use('/api/friends/getfriends', getfriends);
 app.use('/api/friends/add', addfriends);
 app.use('/api/learn', learn);
+const quests = express.Router();
+quests.use(express.json());
+registerQuestsRoute(quests, learnHelpers);
+app.use('/api/quests', quests);
 
 app.listen(port, () => {
     console.log("Server is running on port " + port);
