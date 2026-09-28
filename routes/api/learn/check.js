@@ -1,3 +1,5 @@
+import { number } from "mathjs";
+
 export default function registerCheckRoute(router, helpers) {
     const {
         db,
@@ -91,6 +93,7 @@ export default function registerCheckRoute(router, helpers) {
 
             if (!isSubjective) {
                 const expectedAnswer = req.session.correctAnswer;
+                const result = compareObjectiveAnswer(answer, expectedAnswer, type)
 
                 console.log(`${logPrefix} Objective answer: expected=${JSON.stringify(expectedAnswer)}`);
 
@@ -99,11 +102,11 @@ export default function registerCheckRoute(router, helpers) {
                     `type=${type} | ` +
                     `user=${JSON.stringify(answer)} | ` +
                     `expected=${JSON.stringify(expectedAnswer)} | ` +
-                    `result=${compareObjectiveAnswer(answer, expectedAnswer, type)}`
+                    `result=${result}`
                 );
 
                 data = {
-                    correct: compareObjectiveAnswer(answer, expectedAnswer, type),
+                    correct: result,
                     explanation: req.session.explanation ?? "",
                     answer: expectedAnswer
                 };
@@ -274,6 +277,8 @@ export default function registerCheckRoute(router, helpers) {
                 : (isSubjective ? 0.5 : (data.correct ? 1 : 0));
             const masteryDelta = getMasteryDeltaFromScore(masteryScore);
 
+            req.session.accuracies += clampScore(masteryScore);
+
             console.log(`${logPrefix} AI score: ${Number(masteryScore).toFixed(3)}`);
 
             for (const concept of concepts) {
@@ -347,12 +352,13 @@ export default function registerCheckRoute(router, helpers) {
 
                 return conceptMastery >= target;
             });
-
+            
             const completedMasteryGain = req.session.lessonProgress.masteryGain;
             const completedQuestionsAsked = req.session.lessonProgress.questionsAsked;
-
+            
             const lessonFinished = req.session.lessonFinished
             if (lessonFinished) {
+                req.session.lessonProgress.accuracy = (req.session.accuracies / completedQuestionsAsked) * 100
                 req.session.lessonHistory ??= [];
                 await saveLessonHistory(
                     req,
