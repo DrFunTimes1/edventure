@@ -212,6 +212,60 @@ body {
     border: 2px solid rgba(96, 165, 250, 0.35);
 }
 
+#xpNotice {
+    position: fixed;
+    top: 86px;
+    right: 24px;
+    z-index: 250;
+    padding: 11px 16px;
+    border: 1px solid rgba(96, 165, 250, 0.35);
+    border-radius: 10px;
+    background: rgba(17, 24, 39, 0.96);
+    color: #bfdbfe;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    transition: 0.2s ease;
+}
+
+#xpNotice.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#xpNotice.level-up {
+    border-color: rgba(250, 204, 21, 0.55);
+    color: #fde68a;
+}
+
+.xp-confetti {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.xp-confetti span {
+    position: absolute;
+    top: -12%;
+    left: var(--x);
+    width: 9px;
+    height: 16px;
+    background: hsl(var(--hue), 90%, 60%);
+    animation: xp-confetti-fall var(--duration) linear var(--delay) forwards;
+}
+
+@keyframes xp-confetti-fall {
+    0% {
+        transform: translateY(-10vh) rotate(0deg);
+    }
+    100% {
+        transform: translateY(120vh) rotate(var(--rotation));
+    }
+}
+
 /* =========================================================
    MAIN
    ========================================================= */

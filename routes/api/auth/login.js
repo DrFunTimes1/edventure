@@ -43,6 +43,8 @@ router.post('/', async (req, res) => {
 
             //success
             req.session.userId = user.id;
+            req.session.level = user.level ?? null;
+            req.session.xp = user.xp ?? null;
 
             return res.status(200).json({
                 userId: user.id,

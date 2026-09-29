@@ -2,8 +2,10 @@ const questsGrid = document.getElementById("questsGrid");
 const questsStatus = document.getElementById("questsStatus");
 const confetti = document.getElementById("confetti");
 const questStateKey = "edventure.questCompletionState";
+const questDebugEnabled = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
 let currentQuestData = { quests: [], progress: [] };
 let lastQuestError = null;
+const claimedQuestIds = new Set();
 
 function readQuestState() {
     try {
@@ -64,6 +66,7 @@ function renderQuest(quest, progress, previousState) {
     const wasCompleted = hasPreviousState && Boolean(previousState[quest.id]);
     const card = document.createElement("article");
     card.className = `quest-card${isCompleted ? " completed" : ""}`;
+    card.dataset.questId = quest.id;
 
     const header = document.createElement("div");
     header.className = "quest-card-header";
@@ -123,6 +126,34 @@ function renderQuest(quest, progress, previousState) {
         requirements.appendChild(missing);
     }
 
+    if (isCompleted) {
+        const claimButton = document.createElement("button");
+        claimButton.className = "quest-claim-button";
+        claimButton.type = "button";
+        claimButton.textContent = claimedQuestIds.has(quest.id) ? "XP Claimed" : "Claim XP";
+        claimButton.disabled = claimedQuestIds.has(quest.id);
+        claimButton.addEventListener("click", async () => {
+            claimButton.disabled = true;
+            claimButton.textContent = "Claiming...";
+
+            try {
+                const claim = await apiRequest(`/api/quests/${quest.id}/claim`, "POST", {});
+                claimedQuestIds.add(quest.id);
+                updateXpDisplay(claim);
+                showXpConfetti();
+                claimButton.textContent = `+${Number(claim.xp || 0)} XP Claimed`;
+                showXpNotice(`+${Number(claim.xp || 0)} XP earned${claim.levelUp ? ` · Level ${claim.level}!` : ""}`, Boolean(claim.levelUp));
+                animateClaimedQuest(quest.id);
+            } catch (error) {
+                claimButton.disabled = false;
+                claimButton.textContent = "Claim XP";
+                questsStatus.textContent = error?.message || "Unable to claim quest XP.";
+                questsStatus.classList.add("error");
+            }
+        });
+        requirements.appendChild(claimButton);
+    }
+
     card.append(header, content, requirements);
 
     if (isCompleted && hasPreviousState && !wasCompleted) {
@@ -132,14 +163,26 @@ function renderQuest(quest, progress, previousState) {
     return card;
 }
 
+function animateClaimedQuest(id) {
+    const card = questsGrid.querySelector(`[data-quest-id="${CSS.escape(String(id))}"]`);
+
+    if (!card) {
+        return;
+    }
+
+    card.classList.add("claimed");
+    window.setTimeout(() => card.remove(), 450);
+}
+
 async function loadQuests() {
     try {
         lastQuestError = null;
         await checkLoggedIn();
-        const firstResponse = await apiRequest("/api/quests/get", "POST", {});
+        await loadXpState();
+        const firstResponse = await apiRequest("/api/quests/", "POST", {});
         const response = firstResponse.progress
             ? firstResponse
-            : await apiRequest("/api/quests/get", "POST", {});
+            : await apiRequest("/api/quests/", "POST", {});
         const quests = Array.isArray(response.quests) ? response.quests : [];
         const progress = Array.isArray(response.progress) ? response.progress : [];
 
@@ -227,6 +270,62 @@ function testQuestConfetti() {
     console.log("EdVenture Quests: confetti test triggered.");
 }
 
+async function questClaim(id) {
+    if (!questDebugEnabled) {
+        console.warn("EdVenture: quest debug tools are disabled outside local development.");
+        return null;
+    }
+
+    try {
+        const prepareResponse = await fetch(`/api/quests/debug/complete/${encodeURIComponent(id)}`, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({})
+        });
+
+        if (!prepareResponse.ok) {
+            const prepareData = await prepareResponse.json();
+            console.warn("EdVenture quest_claim preparation response:", {
+                status: prepareResponse.status,
+                ...prepareData
+            });
+            return prepareData;
+        }
+
+        const response = await fetch(`/api/quests/${encodeURIComponent(id)}/claim`, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({})
+        });
+        const data = await response.json();
+
+        console[response.ok ? "log" : "warn"]("EdVenture quest_claim response:", {
+            status: response.status,
+            ...data
+        });
+
+        if (!response.ok) {
+            return data;
+        }
+
+        updateXpDisplay(data);
+        claimedQuestIds.add(Number(id));
+        showXpNotice(`+${Number(data.xp || 0)} XP earned${data.levelUp ? ` · Level ${data.level}!` : ""}`, Boolean(data.levelUp));
+        showXpConfetti();
+        animateClaimedQuest(id);
+        return data;
+    } catch (error) {
+        console.error("EdVenture quest_claim failed:", error);
+        return null;
+    }
+}
+
 function help() {
     console.log(`EdVenture Quests help:
 
@@ -239,12 +338,16 @@ mark_quests_incomplete()-> Mark current quests incomplete locally, then reload
 test_quest_confetti()   -> Test the confetti animation without changing backend state
 
 The Quests page:
-- Calls POST /api/quests/get.
+- Calls POST /api/quests/.
 - Displays the quests returned by the backend.
 - Displays every requirement returned in progress[].progress.
 - Uses progress[].completed for the completed state.
 - Celebrates a newly detected incomplete-to-complete transition once per quest per day.
 - Stores only quest completion state and the date in localStorage.`);
+
+    if (questDebugEnabled) {
+        console.log("quest_claim(id)         -> Call the real quest claim endpoint for a quest ID");
+    }
 }
 
 window.EdVentureQuestDebug = {
@@ -264,5 +367,9 @@ window.show_quest_state = showQuestState;
 window.reset_quest_tracking = resetQuestTracking;
 window.mark_quests_incomplete = markQuestsIncomplete;
 window.test_quest_confetti = testQuestConfetti;
+
+if (questDebugEnabled) {
+    window.quest_claim = questClaim;
+}
 
 loadQuests();

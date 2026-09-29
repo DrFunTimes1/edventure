@@ -1,19 +1,39 @@
 import express from 'express';
-const router = express.Router();
 
-router.get('/',  (req, res) => {
-    res.sendStatus(200);
-});
+export default function registerRootRoute(db) {
+    const router = express.Router();
 
-router.post('/api/session/open', (req, res) => {
-    const today = new Date().toISOString().slice(0, 10);
+    router.get('/', (req, res) => {
+        res.sendStatus(200);
+    });
 
-    if (req.session.questsGeneratedDate !== today) {
-        req.session.questsGenerated = false;
-        req.session.questsGeneratedDate = today;
-    }
+    router.post('/api/session/open', async (req, res) => {
+        try {
+            if (req.session.userId) {
+                const result = await db`
+                    SELECT level, xp
+                    FROM users
+                    WHERE id = ${req.session.userId}
+                `;
 
-    res.status(204).end();
-});
+                const user = result[0];
+                req.session.level = user?.level ?? null;
+                req.session.xp = user?.xp ?? null;
+            }
 
-export default router;
+            const today = new Date().toISOString().slice(0, 10);
+
+            if (req.session.questsGeneratedDate !== today) {
+                req.session.questsGenerated = false;
+                req.session.questsGeneratedDate = today;
+            }
+
+            res.status(204).end();
+        } catch (err) {
+            console.error("[SESSION/OPEN]", err);
+            res.status(500).json({ error: "Failed to initialize session" });
+        }
+    });
+
+    return router;
+}

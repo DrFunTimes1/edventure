@@ -9,6 +9,7 @@ import registerQuestionRoute from './question.js';
 import registerCheckRoute from './check.js';
 import registerExplanationRoute from './explanation.js';
 import registerDashboardRoute from './dashboard.js';
+import registerXpDebugRoute from './xp-debug.js';
 
 const ai = new GoogleGenAI({});
 const groq = new Groq({
@@ -27,5 +28,6 @@ registerQuestionRoute(router, helpers);
 registerCheckRoute(router, helpers);
 registerExplanationRoute(router, helpers);
 registerDashboardRoute(router, helpers);
+registerXpDebugRoute(router, helpers);
 
 export default router;

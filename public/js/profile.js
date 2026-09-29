@@ -66,6 +66,8 @@ async function loadProfile() {
 
     try {
 
+        await loadXpState();
+
         const [userResponse, statusResponse] = await Promise.all([
             fetch("/api/auth/getUser", {
                 credentials: "include"

@@ -580,3 +580,14 @@ body {
         font-size: 16px;
     }
 }
+
+.xp-summary {
+    color: #94a3b8;
+    margin-top: 8px;
+    font-size: 0.9rem;
+}
+
+.lesson-xp-notice {
+    color: #4ade80;
+    font-weight: 800;
+}

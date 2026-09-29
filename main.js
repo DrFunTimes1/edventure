@@ -131,7 +131,7 @@ const initDb = async () => {
 
 initDb();
 
-app.use('/', root);
+app.use('/', root(db));
 app.use('/api/auth/login', login);
 app.use('/api/auth/signup', signup);
 app.use('/api/auth/getUser', getUser);

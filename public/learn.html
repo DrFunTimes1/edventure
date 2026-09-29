@@ -16,6 +16,7 @@
         <h2 id="welcomeName">Learner</h2>
         <p id="welcomeTier" class="welcome-tier">Current Tier: C</p>
         <p id="welcomeGrade" class="welcome-grade">Loading grade...</p>
+        <p class="xp-summary">Level <strong data-xp-level>-</strong> · <span data-xp-text>XP unavailable</span></p>
     </div>
 
     <div class="focus-card">
@@ -55,6 +56,7 @@
 
     <div id="lessonCompletePanel" class="result hidden lesson-complete">
         <h3>Lesson Finished!</h3>
+        <p id="lessonXpNotice" class="lesson-xp-notice"></p>
         <div id="confetti" aria-hidden="true"></div>
     </div>
 </div>
@@ -76,6 +78,7 @@
 
 <script src="js/api.js"></script>
 <script src="js/checkloggedin.js"></script>
+<script src="js/xp.js"></script>
 <script src="js/learn.js"></script>
 </body>
 </html>

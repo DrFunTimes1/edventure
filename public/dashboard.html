@@ -81,22 +81,22 @@
                 <div class="xp-section">
                     <div class="progress-label-row">
                         <span><i class="fas fa-star"></i>XP</span>
-                        <strong id="xpText">0 / 1000 XP</strong>
+                        <strong id="xpText" data-xp-text>XP unavailable</strong>
                     </div>
 
                     <div class="xp-bar">
-                        <div id="xpBar" class="xp-fill" style="width: 0%;"></div>
+                        <div id="xpBar" class="xp-fill" data-xp-bar style="width: 0%;"></div>
                     </div>
 
                     <div class="xp-percentage">
-                        <span id="xpPercentage">0%</span>
+                        <span id="xpPercentage" data-xp-percentage>0%</span>
                         <span>to next level </span>
                     </div>
                 </div>
 
                 <div class="progress-stat">
                     <span class="progress-stat-label">Level</span>
-                    <strong id="level">1</strong>
+                    <strong id="level" data-xp-level>-</strong>
                 </div>
 
                 <div class="progress-stat streak-stat">
@@ -116,6 +116,7 @@
 
 <script src="js/api.js"></script>
 <script src="js/checkloggedin.js"></script>
+<script src="js/xp.js"></script>
 <script src="js/dashboard.js"></script>
 
 </body>

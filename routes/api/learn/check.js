@@ -1,5 +1,3 @@
-import { number } from "mathjs";
-
 export default function registerCheckRoute(router, helpers) {
     const {
         db,
@@ -15,7 +13,9 @@ export default function registerCheckRoute(router, helpers) {
         roundNumber,
         safeParseJson,
         normalizeConceptList,
-        saveLessonHistory
+        saveLessonHistory,
+        updateXp,
+        checkNextLevel
     } = helpers;
     const objectiveTypes = new Set(["mcq", "truefalse", "matching", "ordering"]);
     const logPrefix = "[LEARN/CHECK.JS]";
@@ -396,7 +396,9 @@ export default function registerCheckRoute(router, helpers) {
             const completedMasteryGain = req.session.lessonProgress.masteryGain;
             const completedQuestionsAsked = req.session.lessonProgress.questionsAsked;
             
-            const lessonFinished = req.session.lessonFinished
+            const lessonFinished = req.session.lessonFinished;
+            
+            let levelUp;
             if (lessonFinished) {
                 req.session.lessonProgress.accuracy = (req.session.accuracies / completedQuestionsAsked) * 100
                 req.session.lessonHistory ??= [];
@@ -406,6 +408,10 @@ export default function registerCheckRoute(router, helpers) {
                     req.session.lessonProgress
                 );
 
+                req.session.xp += req.session.lessonProgress.accuracy * 0.5 * completedQuestionsAsked;
+                levelUp = checkNextLevel(req, req.session.level, req.session.xp);
+                await updateXp(req, req.session.level, req.session.xp);
+
                 req.session.lessonHistory = req.session.lessonHistory.slice(-20);
             }
 
@@ -414,7 +420,11 @@ export default function registerCheckRoute(router, helpers) {
                 lessonFinished,
                 masteryGain: completedMasteryGain,
                 questionsAsked: completedQuestionsAsked,
-                nextLesson: null
+                nextLesson: null,
+                levelUp: levelUp,
+                level: req.session.level,
+                xp: req.session.xp,
+                xpRequired: req.session.levelUpRequirement
             });
         } catch (err) {
             req.session.questionCheckPending = false;

@@ -355,6 +355,10 @@ async function loadLearnerSummary() {
     try {
         await checkLoggedIn();
         const userResult = await apiRequest("/api/auth/getUser");
+        updateXpDisplay({
+            level: userResult.user?.level,
+            xp: userResult.user?.xp
+        });
         const learnStatus = await apiRequest("/api/learn/status");
         const nextResult = await apiRequest("/api/learn/next");
 
@@ -499,6 +503,11 @@ checkAnswerButton.onclick = async () => {
 
         const checkResult = res.data || res;
 
+        const previousXp = edVentureXpState.xp;
+        if (checkResult.level != null || checkResult.xp != null) {
+            updateXpDisplay(checkResult);
+        }
+
         isCorrect = !!checkResult.correct;
         if (checkResult.explanation) {
             explanationEl.textContent = checkResult.explanation;
@@ -530,6 +539,15 @@ checkAnswerButton.onclick = async () => {
         resultPanel.classList.remove("hidden");
 
         if (checkResult.lessonFinished) {
+            const xpEarned = Number(checkResult.xp) - Number(previousXp);
+            const notice = document.getElementById("lessonXpNotice");
+            if (notice && Number.isFinite(xpEarned) && xpEarned > 0) {
+                notice.textContent = `+${Math.round(xpEarned)} XP earned${checkResult.levelUp ? " · Level up!" : ""}`;
+            }
+            if (checkResult.levelUp) {
+                showXpConfetti();
+                showXpNotice(`Level ${checkResult.level} reached!`, true);
+            }
             showLessonComplete();
             currentQuestionChecked = true;
             return;
