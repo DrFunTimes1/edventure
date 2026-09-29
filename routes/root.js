@@ -3,6 +3,16 @@ import express from 'express';
 export default function registerRootRoute(db) {
     const router = express.Router();
 
+    function checkStreak(req) {
+        const last = req.session.lastStreakActivity;
+
+        if (!last) {
+            return null;
+        }
+
+        return Date.now() - last < 24 * 60 * 60 * 1000;
+    }
+
     router.get('/', (req, res) => {
         res.sendStatus(200);
     });
@@ -20,6 +30,11 @@ export default function registerRootRoute(db) {
                 req.session.level = user?.level ?? null;
                 req.session.xp = user?.xp ?? null;
             }
+
+            req.session.streakToday ??= false;
+            req.session.lastStreakActivity ??= null;
+            
+            req.session.streakToday = checkStreak(req);
 
             const today = new Date().toISOString().slice(0, 10);
 

@@ -1,3 +1,5 @@
+import { re } from "mathjs";
+
 export default function registerCheckRoute(router, helpers) {
     const {
         db,
@@ -15,7 +17,8 @@ export default function registerCheckRoute(router, helpers) {
         normalizeConceptList,
         saveLessonHistory,
         updateXp,
-        checkNextLevel
+        checkNextLevel,
+        updateStreak
     } = helpers;
     const objectiveTypes = new Set(["mcq", "truefalse", "matching", "ordering"]);
     const logPrefix = "[LEARN/CHECK.JS]";
@@ -400,6 +403,7 @@ export default function registerCheckRoute(router, helpers) {
             
             let levelUp;
             if (lessonFinished) {
+                await updateStreak(req, res);
                 req.session.lessonProgress.accuracy = (req.session.accuracies / completedQuestionsAsked) * 100
                 req.session.lessonHistory ??= [];
                 await saveLessonHistory(

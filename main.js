@@ -8,6 +8,18 @@ import { RedisStore } from "connect-redis";
 import cors from 'cors';
 import 'dotenv/config';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const port = process.env.PORT || 3000;
+const db = neon(process.env.DB_URL);
+
+app.use(cors({
+    origin: "*",
+    credentials: true
+}));
+
 import root from './routes/root.js';
 import login from './routes/api/auth/login.js';
 import signup from './routes/api/auth/signup.js';
@@ -17,12 +29,6 @@ import addfriends from './routes/api/friends/add.js';
 import learn, { helpers as learnHelpers } from './routes/api/learn/learn.js';
 import registerQuestsRoute from './routes/api/quests/quests.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const app = express();
-const port = process.env.PORT || 3000;
-const db = neon(process.env.DB_URL);
 
 export const redisClient = createClient({
     url: process.env.REDIS_URL
@@ -34,10 +40,6 @@ await redisClient.connect();
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(cors({
-    origin: "http://localhost:5173",
-    credentials: true
-}));
 app.use(session({
     store: new RedisStore({
         client: redisClient
