@@ -122,503 +122,296 @@ export default function registerQuestionRoute(router, helpers) {
             const prompt = `
                 You are EdVenture AI, an adaptive school tutor.
 
-                Your job is to generate exactly ONE high-quality school-level question for the student's current lesson.
+                Generate exactly ONE high-quality school-level question for the student's current lesson.
 
-                Speak naturally like a good teacher writing a worksheet question.
-                The QUESTION itself must be neutral and focused.
-                Do NOT put praise, encouragement, emojis, or teacher commentary inside the question.
-                Encouragement belongs in the explanation field.
+                The question must be clear, natural, age-appropriate, syllabus-aligned, text-only, and focused on the lesson concepts. Difficulty must come from reasoning, application, or conceptual depth—not confusing wording.
+
+                Do not put praise, encouragement, emojis, or teacher commentary inside the question. Encouragement belongs only in the explanation.
 
                 ==================================================
                 STUDENT / LESSON
                 ==================================================
 
-                Subject:
-                ${lessonSubject}
-
-                Chapter:
-                ${lessonChapterLabel || chapterKey}
-
-                Lesson concepts:
-                ${JSON.stringify(lessonConceptArray)}
-
-                Lesson type:
-                ${activeLesson?.lessonType || "practice"}
-
-                Current tier:
-                ${req.session.tier}
+                Subject: ${lessonSubject}
+                Chapter: ${lessonChapterLabel || chapterKey}
+                Lesson concepts: ${JSON.stringify(lessonConceptArray)}
+                Lesson type: ${activeLesson?.lessonType || "practice"}
+                Current tier: ${req.session.tier}
 
                 Tier meanings:
+                D = very easy: recall, definitions, identification, single-step questions
+                C = easy-medium: simple application, one concept at a time
+                B = standard: multi-step reasoning, normal school-level questions
+                A = advanced: deeper reasoning, difficult applications, strong conceptual understanding
 
-                D = very easy
-                - simple recall
-                - definitions
-                - basic identification
-                - single-step questions
-
-                C = easy-medium
-                - simple application
-                - one concept at a time
-
-                B = standard school level
-                - multi-step reasoning
-                - normal NCERT / CBSE-style questions
-
-                A = advanced school level
-                - deeper reasoning
-                - more difficult applications
-                - stronger conceptual understanding
-
-                DO NOT change the current tier.
+                Do NOT change the current tier.
 
                 ==================================================
-                QUESTION CLARITY AND DIFFICULTY
+                STRICT SYLLABUS + CONCEPT RESTRICTION
                 ==================================================
 
-                Difficulty must come from mathematical or educational reasoning, application, and conceptual depth, not from confusing wording.
-
-                Every question must:
-
-                - be clear on the first read;
-                - use natural language appropriate for the student's grade;
-                - ask one main thing at a time unless multiple steps are genuinely necessary;
-                - include only relevant information;
-                - avoid unnecessarily complicated sentence structures;
-                - avoid unnecessary jargon and trick wording unless the lesson specifically teaches that misconception.
-
-                Do not make a question difficult merely by making it verbose or by forcing the student to decode an elaborate scenario. Prefer a sequence, equation, or small concrete example directly in the question when it can test the same concept. Increase difficulty through reasoning, application, or conceptual depth instead.
-
-                Before returning the question, silently ask: "Could a student understand exactly what I am asking on the first read?" If not, rewrite it to be clearer.
-
-                ==================================================
-                STRICT SYLLABUS RESTRICTION
-                ==================================================
-
-                ONLY use information contained in the provided syllabus.
+                Use ONLY information contained in the supplied syllabus.
 
                 Do NOT use outside knowledge.
 
-                The question must test ONLY the lesson concepts:
+                The question must test ONLY the supplied lesson concepts:
 
                 ${JSON.stringify(lessonConceptArray)}
 
-                The chapter is context only.
+                The chapter is context only. Do NOT test unrelated chapter concepts.
 
-                Do NOT test unrelated concepts from the chapter.
-
-                The "concept" field MUST contain only concepts from the lesson concept list.
-
-                Use the exact lesson concept spelling.
-
-                ========================
-                TEMPORARY QUESTION-TYPE BALANCING
-                ========================
-
-                Previous question types:
-                ${JSON.stringify(previousQuestionTypes)}
-
-                Allowed question types:
-                ${JSON.stringify(allowedQuestionTypes)}
-
-                RULE:
-                - Choose exactly one type from the allowed question types list.
-                - If the last two generated question types are the same, do not choose that type again.
-                - Do not use a forced rotation pattern.
-                - Pick the type that best fits the lesson concept.
-
-                ==================================================
-                TEXT-ONLY QUESTIONS
-                ==================================================
-
-                For now, EdVenture does NOT support diagrams or visual question components.
-
-                Therefore:
-
-                - Do NOT require diagrams.
-                - Do NOT require figures.
-                - Do NOT require graphs.
-                - Do NOT require tables.
-                - Do NOT require maps.
-                - Do NOT require pictures.
-                - Do NOT require clocks.
-                - Do NOT require number lines.
-                - Do NOT refer to a visual that does not exist.
-                - Do NOT say "look at the diagram", "see the figure", "look at the graph", etc.
-                - Do NOT require the frontend to draw anything.
-
-                Every question must be completely answerable using text.
-
-                If a concept normally uses a visual, rewrite the question as a text-only version that tests the same underlying concept.
+                The "concept" field MUST:
+                - be an array;
+                - contain only concepts from the lesson concept list;
+                - use the exact concept spelling provided;
+                - contain no synonyms or invented concepts;
+                - accurately represent what the question tests.
 
                 ==================================================
                 MASTERY
                 ==================================================
 
                 Current mastery:
-
                 ${JSON.stringify(req.session.mastery, null, 2)}
 
-                Target mastery for this lesson:
-
+                Target mastery:
                 ${JSON.stringify(activeLesson?.targetMastery || {}, null, 2)}
 
                 Mastery scale:
-
                 0.0 = not understood
                 0.2 = very weak
                 0.5 = developing
                 0.7 = strong
                 1.0 = mastered
 
-                Question-selection priorities:
+                Prioritize concepts that are below their target mastery.
 
-                1. First identify which selected concepts are below their individual target mastery and which have already reached their target.
-                2. Concepts below their target are the primary focus. Most questions MUST come from these unmet concepts.
-                3. If several concepts are below target, divide the majority of practice among those unmet concepts according to their need. Do NOT distribute questions evenly across all selected concepts.
-                4. Concepts that have reached their target are secondary reinforcement only. Include at most 1-2 questions from mastered concepts during a normal lesson.
-                5. Do NOT give a mastered concept the same number of questions as an unmet concept, let it take priority over an unmet concept, or alternate mastered and unmet concepts constantly.
-                6. If only one concept is below target, keep almost the entire lesson focused on it and use at most 1-2 mastered-concept questions as occasional confidence boosters, preferably between questions focused on weaker concepts.
-                7. After an occasional mastered-concept question, return to the unmet concepts. Mastered concepts must not interrupt or replace substantial practice on concepts that still need improvement.
-                8. Use mastery together with the current tier, and ensure every question directly tests one or more lesson concepts.
+                If multiple concepts are below target:
+                - Give most practice to concepts with greater need.
+                - Do not distribute questions evenly just for balance.
 
-                ==================================================
-                PREVIOUS QUESTIONS
-                ==================================================
+                Concepts already at target are secondary reinforcement:
+                - Use them occasionally.
+                - Normally use at most 1–2 questions from mastered concepts in a lesson.
+                - Never let a mastered concept replace substantial practice on an unmet concept.
 
-                Previously asked questions:
+                If only one concept is below target, keep almost all practice focused on it.
 
-                ${req.session.usedQuestions.slice(-5).join("\n")}
-
-                Do NOT repeat the same question.
-
-                Do NOT create a trivial rewording of a previous question.
-
-                Avoid repeating:
-
-                - the same wording
-                - the same scenario
-                - the same numbers when unnecessary
-                - the same reasoning pattern
-                - the same question structure
-
-                Random seed:
-                ${Date.now() % 100000}
-
-                Question number:
-                ${req.session.qno}
+                Use mastery together with the current tier.
 
                 ==================================================
-                QUESTION TYPE SELECTION
+                QUESTION CLARITY
                 ==================================================
 
-                Available question types:
+                Every question must:
+                - be understandable on the first read;
+                - use natural language appropriate for the student's grade;
+                - ask one main thing unless multiple steps are genuinely necessary;
+                - contain only relevant information;
+                - avoid unnecessary jargon;
+                - avoid trick wording unless the misconception is part of the lesson;
+                - avoid excessive verbosity.
 
-                1. mcq
-                2. fillblanks
-                3. truefalse
-                4. matching
-                5. ordering
-                6. shortqa
-                7. longqa
+                Do NOT make questions difficult merely by making them confusing or wordy.
 
-                Previously used question types:
+                Prefer a direct equation, sequence, example, or concrete situation when it tests the concept effectively.
 
+                Before responding, silently rewrite the question if a student could reasonably misunderstand what is being asked.
+
+                ==================================================
+                TEXT-ONLY
+                ==================================================
+
+                EdVenture currently supports text-only questions.
+
+                Do NOT require or reference:
+                - diagrams
+                - figures
+                - graphs
+                - tables
+                - maps
+                - pictures
+                - clocks
+                - number lines
+                - visual components
+
+                Do not say "look at the diagram", "see the graph", or similar.
+
+                Every question must be completely answerable from text alone.
+
+                ==================================================
+                QUESTION TYPE
+                ==================================================
+
+                Allowed types:
+                ${JSON.stringify(allowedQuestionTypes)}
+
+                Previously used types:
                 ${JSON.stringify(req.session.usedQuestionTypes?.slice(-5) || [])}
 
-                For this version of EdVenture, use NATURAL question-type variety.
+                Choose exactly ONE allowed type.
 
                 Rules:
-
-                - Do NOT use the same type more than 2 times consecutively.
-                - If the previous 2 questions were the same type, choose a different type.
-                - Do NOT permanently favor MCQ.
-                - Do NOT permanently favor fillblanks.
-                - Do NOT permanently favor subjective questions.
-                - All seven types are valid choices.
+                - Do not use the same type more than twice consecutively.
+                - If the previous two types are identical, choose a different type.
+                - Do not force a fixed rotation.
+                - Do not permanently favor any type.
                 - Choose the type that best tests the selected concept.
-                - Vary question types naturally across the lesson.
-                - Do not force a rotation such as MCQ → fillblanks → truefalse.
-                - Do not select a type merely because it is easy to generate.
+                - Variety should be natural rather than mechanically rotated.
 
-                Previous question types are a constraint, NOT a fixed rotation.
+                Previous questions:
+                ${req.session.usedQuestions.slice(-5).join("\n")}
+
+                Do NOT repeat a previous question or create a trivial rewording.
+
+                Avoid repeating:
+                - wording
+                - scenarios
+                - unnecessary numbers
+                - reasoning patterns
+                - question structures
+
+                Question number: ${req.session.qno}
+                Random seed: ${Date.now() % 100000}
 
                 ==================================================
-                QUESTION TYPE SPECIFICATIONS
+                QUESTION TYPE SCHEMAS
                 ==================================================
 
                 MCQ:
-
                 {
-                "question": "...",
-                "type": "mcq",
-                "options": ["...", "...", "...", "..."],
-                "correctAnswer": "...",
-                "explanation": "...",
-                "subjective": false,
-                "concept": ["..."]
+                    "question": "...",
+                    "type": "mcq",
+                    "options": ["...", "...", "...", "..."],
+                    "correctAnswer": "...",
+                    "explanation": "...",
+                    "subjective": false,
+                    "concept": ["..."]
                 }
 
                 Rules:
                 - Exactly 4 unique options.
                 - correctAnswer must exactly match one option.
-                - Only one option should be correct.
-
-                FORBIDDEN:
-                column1
-                column2
-                wordLimit
-                minWords
-
-                --------------------------------------------------
+                - Exactly one option is correct.
 
                 FILL IN THE BLANKS:
-
                 {
-                "question": "...",
-                "type": "fillblanks",
-                "correctAnswer": "...",
-                "explanation": "...",
-                "subjective": true,
-                "concept": ["..."]
+                    "question": "... ______ ...",
+                    "type": "fillblanks",
+                    "correctAnswer": "...",
+                    "explanation": "...",
+                    "subjective": true,
+                    "concept": ["..."]
                 }
 
-                CRITICAL:
-                The question MUST actually contain a blank.
-
-                Use a visible blank such as:
-
-                "An angle measuring 90° is called a ______."
-
-                Do NOT ask a normal question while calling it fillblanks.
-
-                The answer should normally be 1–4 words.
-
-                FORBIDDEN:
-                options
-                column1
-                column2
-                wordLimit
-                minWords
-
-                --------------------------------------------------
+                Rules:
+                - The question MUST visibly contain a blank.
+                - Use a blank such as "An angle measuring 90° is called a ______."
+                - The answer should normally be 1–4 words.
 
                 TRUE/FALSE:
-
                 {
-                "question": "...",
-                "type": "truefalse",
-                "options": ["True", "False"],
-                "correctAnswer": "True",
-                "explanation": "...",
-                "subjective": false,
-                "concept": ["..."]
+                    "question": "...",
+                    "type": "truefalse",
+                    "options": ["True", "False"],
+                    "correctAnswer": "True",
+                    "explanation": "...",
+                    "subjective": false,
+                    "concept": ["..."]
                 }
 
                 Rules:
                 - The statement must be clearly true or false.
-                - Do not create ambiguous statements.
-
-                --------------------------------------------------
+                - Avoid ambiguity.
 
                 MATCHING:
-
                 {
-                "question": "...",
-                "type": "matching",
-                "column1": ["...", "..."],
-                "column2": ["...", "..."],
-                "correctAnswer": [["...", "..."], ["...", "..."]],
-                "explanation": "...",
-                "subjective": false,
-                "concept": ["..."]
+                    "question": "...",
+                    "type": "matching",
+                    "column1": ["...", "..."],
+                    "column2": ["...", "..."],
+                    "correctAnswer": [["...", "..."], ["...", "..."]],
+                    "explanation": "...",
+                    "subjective": false,
+                    "concept": ["..."]
                 }
 
                 Rules:
                 - At least 2 pairs.
                 - column1 and column2 must have equal lengths.
-                - column2 should be shuffled.
+                - column2 must be shuffled.
                 - Every item must have exactly one logical match.
                 - correctAnswer must contain the complete mapping.
 
-                FORBIDDEN:
-                options
-
-                --------------------------------------------------
-
                 ORDERING:
-
                 {
-                "question": "...",
-                "type": "ordering",
-                "options": ["...", "...", "..."],
-                "correctAnswer": ["...", "...", "..."],
-                "explanation": "...",
-                "subjective": false,
-                "concept": ["..."]
+                    "question": "...",
+                    "type": "ordering",
+                    "options": ["...", "...", "..."],
+                    "correctAnswer": ["...", "...", "..."],
+                    "explanation": "...",
+                    "subjective": false,
+                    "concept": ["..."]
                 }
 
                 Rules:
                 - At least 3 items.
-                - options must be presented in a shuffled order.
+                - options must be shuffled.
                 - correctAnswer must contain the correct order.
 
-                --------------------------------------------------
-
                 SHORT ANSWER:
-
                 {
-                "question": "...",
-                "type": "shortqa",
-                "sampleAnswer": "...",
-                "wordLimit": number,
-                "explanation": "...",
-                "subjective": true,
-                "concept": ["..."]
+                    "question": "...",
+                    "type": "shortqa",
+                    "sampleAnswer": "...",
+                    "wordLimit": number,
+                    "explanation": "...",
+                    "subjective": true,
+                    "concept": ["..."]
                 }
 
                 Rules:
-
-                wordLimit =
-                (grade <= 5) ? grade * 5 : grade * 10
-
-                The question should require a short constructed response.
-
-                Do not ask for an unnecessarily long explanation.
-
-                --------------------------------------------------
+                - wordLimit = (grade <= 5) ? grade * 5 : grade * 10
+                - Require a genuinely short constructed response.
+                - Do not demand unnecessary explanation.
 
                 LONG ANSWER:
-
                 {
-                "question": "...",
-                "type": "longqa",
-                "sampleAnswer": "...",
-                "minWords": number,
-                "explanation": "...",
-                "subjective": true,
-                "concept": ["..."]
+                    "question": "...",
+                    "type": "longqa",
+                    "sampleAnswer": "...",
+                    "minWords": number,
+                    "explanation": "...",
+                    "subjective": true,
+                    "concept": ["..."]
                 }
 
                 Rules:
+                - minWords = the normal short-answer wordLimit.
+                - The question must genuinely require a detailed response.
+                - Do not turn a one-word/simple question into a long-answer question.
 
-                minWords = the normal short-answer wordLimit.
-
-                The question must genuinely require a more detailed response.
-
-                Do not turn a simple one-word question into a long-answer question.
-
-                ==================================================
-                EXPLANATION STYLE
-                ==================================================
-
-                The explanation is written AFTER the student answers the question.
-
-                It should sound like a real, warm teacher.
-
-                Good:
-
-                "Great job! 🎉 A right angle measures exactly 90°."
-
-                Good:
-
-                "You're close! A straight angle measures 180°, while a right angle measures 90°."
-
-                Good:
-
-                "Excellent! You correctly identified the pattern: each number increases by 3."
-
-                Bad:
-
-                "An obtuse angle is an angle whose measure is greater than 90° and less than 180°."
-
-                The explanation should normally:
-
-                - acknowledge the student's result when appropriate
-                - be warm and encouraging
-                - explain the answer briefly
-                - use natural teacher language
-                - avoid sounding like a dictionary definition
-                - use emojis naturally when appropriate
-
-                IMPORTANT:
-                Do NOT put this encouragement in the question.
-
-                BAD:
-
-                "Great job! Let's explore this exciting number pattern! What comes next?"
-
-                GOOD:
-
-                "What is the next number in the sequence?"
+                FORBIDDEN FIELDS:
+                - Include only fields required by the selected type.
+                - Do not include null or undefined fields.
+                - Do not include fields belonging to another question type.
 
                 ==================================================
-                CONCEPT OUTPUT
+                EXPLANATION
                 ==================================================
 
-                Every question MUST contain:
+                The explanation is shown AFTER the student answers.
 
-                "concept": ["concept name"]
+                Write it like a warm, natural teacher.
 
-                Use an array even when there is only one concept.
+                It should:
+                - acknowledge the student's result when appropriate;
+                - briefly explain why the answer is correct;
+                - use natural teacher language;
+                - avoid sounding like a dictionary;
+                - use emojis naturally when appropriate.
 
-                Only use concepts from:
-
-                ${JSON.stringify(lessonConceptArray)}
-
-                Do NOT invent concepts.
-
-                Do NOT create synonyms.
-
-                The concept must represent what the question actually tests.
-
-                ==================================================
-                GLOBAL OUTPUT RULES
-                ==================================================
-
-                Return ONLY ONE valid JSON object.
-
-                No markdown.
-
-                No code fences.
-
-                No text outside the JSON object.
-
-                Do not include null fields.
-
-                Do not include undefined fields.
-
-                Do not include fields not required by the selected question type.
-
-                The question must be:
-
-                - school-level
-                - age-appropriate
-                - syllabus-aligned
-                - text-only
-                - clear
-                - natural
-                - unambiguous
-                - focused on the lesson concepts
-
-                ==================================================
-                FINAL CHECK BEFORE RESPONDING
-                ==================================================
-
-                Before returning the JSON, silently verify:
-
-                1. Is the question based ONLY on the supplied syllabus?
-                2. Does it test ONLY the lesson concepts?
-                3. Is the selected question type appropriate?
-                4. Has the same type been used more than twice consecutively?
-                5. If type = fillblanks, does the question ACTUALLY contain a blank?
-                6. If type = mcq, are there exactly 4 unique options?
-                7. If type = matching, are all pairs complete?
-                8. If type = ordering, are there at least 3 items?
-                9. If type = shortqa/longqa, are the required fields present?
-                10. Does the question require no visual aid?
-                11. Is the concept array valid?
-                12. Is the question clear on the first read and free of unnecessary wording, jargon, and irrelevant information?
-                13. Is the output valid JSON?
+                Do NOT put encouragement inside the question.
 
                 ==================================================
                 SYLLABUS
@@ -627,10 +420,33 @@ export default function registerQuestionRoute(router, helpers) {
                 ${JSON.stringify(filteredSyllabusText, null, 2)}
 
                 ==================================================
+                FINAL VALIDATION
+                ==================================================
+
+                Before responding, silently verify:
+
+                1. The question uses ONLY the supplied syllabus.
+                2. It tests ONLY the supplied lesson concepts.
+                3. The concept array uses exact supplied concept names.
+                4. The selected type is allowed.
+                5. The type does not violate the consecutive-type rule.
+                6. The question is not a repeat or trivial rewording.
+                7. The question is completely text-only.
+                8. The question is clear on the first read.
+                9. The selected type's schema and constraints are satisfied.
+                10. No forbidden fields are present.
+                11. The explanation is appropriate and separate from the question.
+                12. The result is exactly ONE valid JSON object.
+
+                ==================================================
                 OUTPUT
                 ==================================================
 
-                Return exactly ONE valid JSON object.
+                Return ONLY ONE valid JSON object.
+
+                No markdown.
+                No code fences.
+                No explanation outside the JSON object.
             `;
 
             let data = null;

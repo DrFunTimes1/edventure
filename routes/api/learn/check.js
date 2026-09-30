@@ -322,6 +322,10 @@ export default function registerCheckRoute(router, helpers) {
 
             req.session.accuracies += clampScore(masteryScore);
 
+            if (masteryScore >= 0.5){
+                req.session.correct++;
+            }
+
             console.log(`${logPrefix} AI score: ${Number(masteryScore).toFixed(3)}`);
 
             for (const concept of concepts) {
@@ -395,16 +399,17 @@ export default function registerCheckRoute(router, helpers) {
 
                 return conceptMastery >= target;
             });
-            
+
             const completedMasteryGain = req.session.lessonProgress.masteryGain;
             const completedQuestionsAsked = req.session.lessonProgress.questionsAsked;
-            
+
             const lessonFinished = req.session.lessonFinished;
-            
-            let levelUp;
+
+            let levelUp, streak;
             if (lessonFinished) {
-                await updateStreak(req, res);
-                req.session.lessonProgress.accuracy = (req.session.accuracies / completedQuestionsAsked) * 100
+                streak = await updateStreak(req);
+                req.session.lessonProgress.accuracy = (req.session.accuracies / completedQuestionsAsked) * 100;
+                req.session.lessonProgress.questionsCorrect = req.session.correct;
                 req.session.lessonHistory ??= [];
                 await saveLessonHistory(
                     req,
@@ -424,8 +429,9 @@ export default function registerCheckRoute(router, helpers) {
                 lessonFinished,
                 masteryGain: completedMasteryGain,
                 questionsAsked: completedQuestionsAsked,
+                streak,
                 nextLesson: null,
-                levelUp: levelUp,
+                levelUp,
                 level: req.session.level,
                 xp: req.session.xp,
                 xpRequired: req.session.levelUpRequirement

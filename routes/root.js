@@ -33,7 +33,7 @@ export default function registerRootRoute(db) {
 
             req.session.streakToday ??= false;
             req.session.lastStreakActivity ??= null;
-            
+
             req.session.streakToday = checkStreak(req);
 
             const today = new Date().toISOString().slice(0, 10);

@@ -2,7 +2,7 @@ export default function registerDashboardRoute(router, helpers){
     const {
         buildNextLesson,
         normalizeMastery,
-        calculateTier,
+        calculateTier
     } = helpers;
     const logPrefix = "[LEARN/DASHBOARD.JS]";
 

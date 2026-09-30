@@ -45,6 +45,7 @@ export default function registerInitRoute(router, helpers) {
         try {
             console.log(`${logPrefix} User started lesson`);
             req.session.accuracies = 0;
+            req.session.correct = 0;
 
             const grade = await loadStudentGrade(req);
 
